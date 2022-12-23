@@ -13,8 +13,8 @@ class MouseController:
         self.bottom_right = None
 
     def select_capture_region(self) -> Tuple[int, int, int, int]:
-        with mouse.Listener(on_click=self.on_click) as listener:
-            listener.join()
+        with mouse.Listener(on_click=self.on_click) as mouse_listener:
+            mouse_listener.join()
 
         return *self.top_left, *self.bottom_right
 
