@@ -1,3 +1,4 @@
+from typing import Tuple
 
 from pynput import mouse
 
@@ -11,13 +12,11 @@ class MouseController:
         self.top_left = None
         self.bottom_right = None
 
-    def select_capture_region(self):
+    def select_capture_region(self) -> Tuple[int, int, int, int]:
         with mouse.Listener(on_click=self.on_click) as listener:
             listener.join()
-            print(self.top_left)
-            print(self.bottom_right)
-        print(self.top_left)
-        print(self.bottom_right)
+
+        return *self.top_left, *self.bottom_right
 
     def on_click(self, x, y, button, pressed):
         if button == mouse.Button.left:

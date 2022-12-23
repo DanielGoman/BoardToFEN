@@ -1,22 +1,23 @@
+from typing import Tuple
+
 import numpy as np
 
 from PIL import ImageGrab
+from mouse_controller import MouseController
 
 
 class ImageCapture:
     def __init__(self):
-        self.top_left = None
-        self.bottom_right = None
+        self.controller = MouseController()
 
     def capture(self):
-        pass
+        capture_region = self.controller.select_capture_region()
+        frame = ImageCapture.capture_image(capture_region)
 
-    def select_capture_region(self):
-        pass
+        return frame
 
-    def capture_image(self,) -> np.ndarray:
-        capture_region = (*self.top_left, *self.bottom_right)
-
+    @staticmethod
+    def capture_image(capture_region: Tuple[int, int, int, int]) -> np.ndarray:
         capture = ImageGrab.grab(bbox=capture_region)
         frame = np.array(capture)
 
@@ -25,9 +26,7 @@ class ImageCapture:
 
 if __name__ == "__main__":
     cap = ImageCapture()
-    cap.top_left = (50, 50)
-    cap.bottom_right = (700, 700)
 
     from matplotlib import pyplot as plt
-    plt.imshow(cap.capture_image())
+    plt.imshow(cap.capture())
     plt.show()
