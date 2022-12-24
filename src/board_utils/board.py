@@ -1,10 +1,14 @@
-from typing import Tuple
+import time
 
 import cv2
 import numpy as np
 import itertools
 
+from typing import Tuple, List
+from scipy.signal import convolve2d
 from matplotlib import pyplot as plt
+from pprint import pprint
+
 from src.input_utils.image_capture import ImageCapture
 
 
@@ -42,91 +46,153 @@ class Board:
 
         return frame, key_points, descriptors
 
-    @staticmethod
-    def crop_by_sum(edges):
-        height, width = edges.shape[:2]
-        portion = 0.6
-        x_sum = np.sum(edges, axis=1)
-        y_sum = np.sum(edges, axis=0)
 
-        x_start = np.argmax(x_sum > portion * width)
-        y_start = np.argmax(y_sum > portion * height)
+def convert_frame_to_square_vertices(edges, row_seq, col_seq):
+    find_edges(edges, row_seq)
+    # find_edges(edges.T, col_seq)
+    # print(row_seq)
 
-        x_end = height - np.argmax(x_sum[::-1] > portion * width)
-        y_end = width - np.argmax(y_sum[::-1] > portion * height)
 
-        print('Crop by sum:')
+def find_edges(edges, seq, split_size=8):
+    # padding_size = split_size - len(seq) % split_size
+    # padded = np.pad(seq, (0, padding_size), mode='constant', constant_values=0)
 
-        print(f'start: ({x_start}, {y_start})')
-        print(f'end: ({x_end}, {y_end})\n')
+    fragment_size = len(seq) // split_size
+    split_idx = np.arange(fragment_size // 2, len(seq), fragment_size)
+    fragments = np.split(seq, split_idx)
 
-        plt.imsave('sum_crop.png', edges[x_start: x_end, y_start: y_end], cmap='gray')
+    pprint(fragments)
+    print()
 
-    @staticmethod
-    def crop_by_seq(edges: np.ndarray, portion=0.1) -> (np.ndarray, np.ndarray, Tuple[int, int], Tuple[int, int]):
-        height, width = edges.shape
-        row_seq = Board.get_max_seq_lens_per_row(edges)
-        col_seq = Board.get_max_seq_lens_per_row(edges.T)
 
-        x_start = np.argmax(row_seq > portion * width)
-        y_start = np.argmax(col_seq > portion * height)
+    padded_fragments, start_pad_size, end_pad_size = pad_fragments(fragments)
 
-        x_end = height - np.argmax(row_seq[::-1] > portion * width)
-        y_end = width - np.argmax(col_seq[::-1] > portion * height)
+    conv_mat = np.ones((1, 3))
+    conv_fragments = convolve2d(padded_fragments, conv_mat, mode='same')
 
-        print('Crop by seq:')
+    max_len_idx_per_row = np.argmax(conv_fragments, axis=1)
+    print(max_len_idx_per_row)
 
-        print(f'start: ({x_start}, {y_start})')
-        print(f'end: ({x_end}, {y_end})\n')
 
-        plt.imsave('seq_crop.png', edges[x_start: x_end, y_start: y_end], cmap='gray')
 
-        return row_seq, col_seq, (x_start, x_end), (y_start, y_end)
+def _print(seq1, seq2):
+    for i, (val1, val2) in enumerate(zip(seq1, seq2)):
+        print(f'{i}: {int(val1)}   {int(val2)}')
 
-    @staticmethod
-    def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
-        """Retrieves the length of the longest edge in all rows of the given matrix
 
-        Args:
-            frame: the matrix in which we search for the longest edge in each row
 
-        Returns:
-            max_seq_len_per_row_no_holes: index i contains the length of the longest edge in row i
+def pad_fragments(fragments: List[np.ndarray]) -> np.ndarray:
+    padded_fragments = fragments.copy()
 
-        """
-        height, width = frame.shape[:2]
+    required_size = len(fragments[1])
 
-        # padding each row to also capture sequences that start from the first index
-        padding = np.zeros((height, 1))
-        stacked = np.hstack([padding, frame == 1, padding])
+    pad_start = required_size - len(fragments[0])
+    pad_end = required_size - len(fragments[-1])
 
-        # subtracting consecutive indexes
-        diff = np.diff(stacked)
+    padded_fragments[0] = np.pad(padded_fragments[0], (pad_start, 0), mode='constant', constant_values=0)
+    padded_fragments[-1] = np.pad(padded_fragments[-1], (0, pad_end), mode='constant', constant_values=0)
 
-        # Finds the start and end of all the sequences
-        rows_number, seq_idx = np.where(diff)
+    padded_fragments = np.array(padded_fragments, dtype=int)
 
-        # number of the sequences found per row - if found 2 sequences in some row, then the lengthfor that row
-        # would be 4:   start_idx_seq1, end_idx_seq1, start_idx_seq2, end_idx_seq2
-        row_unique_seqs_number = [len(list(values)) for key, values in itertools.groupby(rows_number)]
-        # start and end of the sequences list of each row
-        row_seq_idx_split = np.cumsum(row_unique_seqs_number)
+    return padded_fragments, pad_start, pad_end
 
-        # separate row-wise the sets of sequence indexes and calculate the length of each sequence
-        seq_idx_list_per_row = np.split(seq_idx, row_seq_idx_split)[:-1]
-        seq_idx_list_per_row = [row_seq_indices.reshape(-1, 2) for row_seq_indices in seq_idx_list_per_row]
-        seq_lens_per_row = [np.diff(row_seq_indices) for row_seq_indices in seq_idx_list_per_row]
 
-        # calculate the maximal length of a sequence in each row
-        max_seq_len_per_row = [np.max(row_seq_lens) for row_seq_lens in seq_lens_per_row]
+def unpad_fragments(padded_fragments: np.ndarray, start_pad: int, end_pad: int) -> List[np.ndarray]:
+    fragments = list(padded_fragments.copy())
+    fragments[0] = fragments[0][start_pad:]
+    fragments[-1] = fragments[-1][:-end_pad]
 
-        # single list with max length of the sequence in each row.
-        # rows with no sequence at all get a 0 value
-        max_seq_len_per_row_no_holes = np.zeros(height)
-        existent_rows = np.unique(rows_number)
-        np.put(max_seq_len_per_row_no_holes, existent_rows, max_seq_len_per_row)
+    return fragments
 
-        return max_seq_len_per_row_no_holes
+
+def crop_by_sum(edges):
+    height, width = edges.shape[:2]
+    portion = 0.6
+    x_sum = np.sum(edges, axis=1)
+    y_sum = np.sum(edges, axis=0)
+
+    x_start = np.argmax(x_sum > portion * width)
+    y_start = np.argmax(y_sum > portion * height)
+
+    x_end = height - np.argmax(x_sum[::-1] > portion * width)
+    y_end = width - np.argmax(y_sum[::-1] > portion * height)
+
+    # print('Crop by sum:')
+    #
+    # print(f'start: ({x_start}, {y_start})')
+    # print(f'end: ({x_end}, {y_end})\n')
+    #
+    # plt.imsave('sum_crop.png', edges[x_start: x_end, y_start: y_end], cmap='gray')
+
+
+def crop_by_seq(edges: np.ndarray, portion=0.1) -> (np.ndarray, np.ndarray, np.ndarray):
+    height, width = edges.shape
+    row_seq = get_max_seq_lens_per_row(edges)
+    col_seq = get_max_seq_lens_per_row(edges.T)
+
+    x_start = np.argmax(row_seq > portion * width)
+    y_start = np.argmax(col_seq > portion * height)
+
+    x_end = height - np.argmax(row_seq[::-1] > portion * width)
+    y_end = width - np.argmax(col_seq[::-1] > portion * height)
+
+    # print('Crop by seq:')
+    #
+    # print(f'start: ({x_start}, {y_start})')
+    # print(f'end: ({x_end}, {y_end})\n')
+
+    cropped_row_seq = row_seq[x_start: x_end]
+    cropped_col_seq = col_seq[y_start: y_end]
+    cropped_edges = edges[x_start: x_end, y_start: y_end]
+
+    # plt.imsave('seq_crop.png', cropped_edges, cmap='gray')
+
+    return cropped_edges, cropped_row_seq, cropped_col_seq
+
+
+def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
+    """Retrieves the length of the longest edge in all rows of the given matrix
+
+    Args:
+        frame: the matrix in which we search for the longest edge in each row
+
+    Returns:
+        max_seq_len_per_row_no_holes: index i contains the length of the longest edge in row i
+
+    """
+    height, width = frame.shape[:2]
+
+    # padding each row to also capture sequences that start from the first index
+    padding = np.zeros((height, 1))
+    stacked = np.hstack([padding, frame == 1, padding])
+
+    # subtracting consecutive indexes
+    diff = np.diff(stacked)
+
+    # Finds the start and end of all the sequences
+    rows_number, seq_idx = np.where(diff)
+
+    # number of the sequences found per row - if found 2 sequences in some row, then the lengthfor that row
+    # would be 4:   start_idx_seq1, end_idx_seq1, start_idx_seq2, end_idx_seq2
+    row_unique_seqs_number = [len(list(values)) for key, values in itertools.groupby(rows_number)]
+    # start and end of the sequences list of each row
+    row_seq_idx_split = np.cumsum(row_unique_seqs_number)
+
+    # separate row-wise the sets of sequence indexes and calculate the length of each sequence
+    seq_idx_list_per_row = np.split(seq_idx, row_seq_idx_split)[:-1]
+    seq_idx_list_per_row = [row_seq_indices.reshape(-1, 2) for row_seq_indices in seq_idx_list_per_row]
+    seq_lens_per_row = [np.diff(row_seq_indices) for row_seq_indices in seq_idx_list_per_row]
+
+    # calculate the maximal length of a sequence in each row
+    max_seq_len_per_row = [np.max(row_seq_lens) for row_seq_lens in seq_lens_per_row]
+
+    # single list with max length of the sequence in each row.
+    # rows with no sequence at all get a 0 value
+    max_seq_len_per_row_no_holes = np.zeros(height)
+    existent_rows = np.unique(rows_number)
+    np.put(max_seq_len_per_row_no_holes, existent_rows, max_seq_len_per_row)
+
+    return max_seq_len_per_row_no_holes
 
 
 if __name__ == "__main__":
@@ -137,9 +203,13 @@ if __name__ == "__main__":
     print()
 
     # edge detector
-    edges = cv2.Canny(image, 50, 250)
-    edges[edges < 50] = 0
-    edges[edges >= 50] = 1
+    _edges = cv2.Canny(image, 50, 250)
+    _edges[_edges < 50] = 0
+    _edges[_edges >= 50] = 1
 
-    row_seq, col_seq, x_crop_idx, y_crop_idx = Board.crop_by_seq(edges)
+    _cropped_edges, _cropped_row_seq, _cropped_col_seq = crop_by_seq(_edges)
 
+    print('Cropped size:', _cropped_edges.shape)
+    print()
+
+    board_square_vertices = convert_frame_to_square_vertices(_cropped_edges, _cropped_row_seq, _cropped_col_seq)
