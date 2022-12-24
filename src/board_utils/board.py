@@ -73,6 +73,8 @@ def find_edges(edges, seq, split_size=8):
     max_len_idx_per_row = np.argmax(conv_fragments, axis=1)
     print(max_len_idx_per_row)
 
+    # TODO: split using the peaks found, add margin, return vertices
+
 
 
 def _print(seq1, seq2):
