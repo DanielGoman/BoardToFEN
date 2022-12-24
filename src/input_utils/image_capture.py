@@ -1,9 +1,8 @@
 from typing import Tuple
 
 import numpy as np
-
 from PIL import ImageGrab
-from mouse_controller import MouseController
+from src.input_utils.mouse_controller import MouseController
 
 
 class ImageCapture:
@@ -13,8 +12,10 @@ class ImageCapture:
     def capture(self):
         capture_region = self.controller.select_capture_region()
         frame = ImageCapture.capture_image(capture_region)
+        bgr_frame = frame[..., ::-1]
+        out_frame = np.ascontiguousarray(bgr_frame, np.uint8)
 
-        return frame
+        return out_frame
 
     @staticmethod
     def capture_image(capture_region: Tuple[int, int, int, int]) -> np.ndarray:
@@ -27,6 +28,5 @@ class ImageCapture:
 if __name__ == "__main__":
     cap = ImageCapture()
 
-    from matplotlib import pyplot as plt
-    plt.imshow(cap.capture())
-    plt.show()
+    img = cap.capture()
+

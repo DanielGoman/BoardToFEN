@@ -2,3 +2,5 @@ numpy~=1.21.4
 Pillow~=8.4.0
 matplotlib~=3.5.1
 pynput~=1.7.6
+opencv-python
+opencv-contrib-python
