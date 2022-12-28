@@ -1,15 +1,12 @@
-import time
-
 import cv2
 import numpy as np
 import itertools
 
-from typing import Tuple, List
+from typing import List
 from scipy.signal import convolve2d
 from matplotlib import pyplot as plt
 from pprint import pprint
 
-from src.input_utils.image_capture import ImageCapture
 
 
 class Board:
@@ -47,16 +44,53 @@ class Board:
         return frame, key_points, descriptors
 
 
-def convert_frame_to_square_vertices(edges, row_seq, col_seq):
-    find_edges(edges, row_seq)
-    # find_edges(edges.T, col_seq)
-    # print(row_seq)
+def convert_frame_to_square_vertices(row_seq: List[int], col_seq: List[int], board_size: int = 8) -> np.ndarray:
+    """Uses the x and y axis' edge sequences to calculate indices for each square on the board inside the given frame
+
+    Args:
+        row_seq: list of the longest sequences of edges in each row
+        col_seq: list of the longest sequences of edges in each column
+        board_size: number of squares in a single row/column of the board, assumes it's the same number
+                        for rows and columns
+
+    Returns:
+        squares_idx: (board_size, board_size, 4) matrix which contains (top left bottom right) indices for each
+                        square of the board w.r.t the indices of the frame
+
+    """
+    x_edge_margins = find_edges(row_seq, split_size=board_size)
+    y_edge_margins = find_edges(col_seq, split_size=board_size)
+
+    # third dimension to store top left and bottom right vertices
+    squares_idx = np.zeros((board_size, board_size, 4))
+
+    # using the margins to crop the squares
+    for i, (top_row_idx_margins, bottom_row_idx_margins) in enumerate(zip(x_edge_margins[:-1], x_edge_margins[1:])):
+        for j, (left_col_idx_margins, right_col_idx_margins) in enumerate(zip(y_edge_margins[:-1], y_edge_margins[1:])):
+            top_row_idx = top_row_idx_margins[1]
+            left_row_idx = left_col_idx_margins[1]
+            bottom_row_idx = bottom_row_idx_margins[0]
+            right_row_idx = right_col_idx_margins[0]
+            squares_idx[i, j] = (top_row_idx, left_row_idx, bottom_row_idx, right_row_idx)
+
+    return squares_idx
 
 
-def find_edges(edges, seq, split_size=8):
-    # padding_size = split_size - len(seq) % split_size
-    # padded = np.pad(seq, (0, padding_size), mode='constant', constant_values=0)
 
+def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
+    """Finds the indices of the edges on the board along a single axis
+    The axis is explicitly passed through the `seq` variable
+
+    Args:
+        seq: list of the longest sequences of edges in all rows or in all columns
+        split_size: the number of squares the axis should be split to
+        margin_size: margin value to add to the detected edges between squares
+
+    Returns:
+        edges_margins: list of (edge - margin, edge + margin) for all edges that separate between different squares
+                        along some axis (x or y)
+
+    """
     fragment_size = len(seq) // split_size
     split_idx = np.arange(fragment_size // 2, len(seq), fragment_size)
     fragments = np.split(seq, split_idx)
@@ -64,17 +98,25 @@ def find_edges(edges, seq, split_size=8):
     pprint(fragments)
     print()
 
-
     padded_fragments, start_pad_size, end_pad_size = pad_fragments(fragments)
 
     conv_mat = np.ones((1, 3))
     conv_fragments = convolve2d(padded_fragments, conv_mat, mode='same')
 
     max_len_idx_per_row = np.argmax(conv_fragments, axis=1)
+
+    # calculate absolute idx in row/column
+    # start_pad_size is used to adjust the indices due to the padding
+    frame_split_idx = [idx + fragment_size*i - start_pad_size for i, idx in enumerate(max_len_idx_per_row)]
+
     print(max_len_idx_per_row)
+    print(frame_split_idx)
 
-    # TODO: split using the peaks found, add margin, return vertices
+    # pad margins
+    edges_margins = [(max(0, idx - margin_size), min(len(seq) - 1, idx + margin_size)) for idx in frame_split_idx]
+    print(edges_margins)
 
+    return edges_margins
 
 
 def _print(seq1, seq2):
@@ -138,18 +180,11 @@ def crop_by_seq(edges: np.ndarray, portion=0.1) -> (np.ndarray, np.ndarray, np.n
     x_end = height - np.argmax(row_seq[::-1] > portion * width)
     y_end = width - np.argmax(col_seq[::-1] > portion * height)
 
-    # print('Crop by seq:')
-    #
-    # print(f'start: ({x_start}, {y_start})')
-    # print(f'end: ({x_end}, {y_end})\n')
-
     cropped_row_seq = row_seq[x_start: x_end]
     cropped_col_seq = col_seq[y_start: y_end]
     cropped_edges = edges[x_start: x_end, y_start: y_end]
 
-    # plt.imsave('seq_crop.png', cropped_edges, cmap='gray')
-
-    return cropped_edges, cropped_row_seq, cropped_col_seq
+    return cropped_edges, cropped_row_seq, cropped_col_seq, (x_start, x_end), (y_start, y_end)
 
 
 def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
@@ -209,9 +244,11 @@ if __name__ == "__main__":
     _edges[_edges < 50] = 0
     _edges[_edges >= 50] = 1
 
-    _cropped_edges, _cropped_row_seq, _cropped_col_seq = crop_by_seq(_edges)
+    _cropped_edges, _cropped_row_seq, _cropped_col_seq, x_crop, y_crop = crop_by_seq(_edges)
 
     print('Cropped size:', _cropped_edges.shape)
     print()
 
     board_square_vertices = convert_frame_to_square_vertices(_cropped_edges, _cropped_row_seq, _cropped_col_seq)
+    # TODO: get piece templates
+    # TODO: decide how to match between templates to cropped pieces
