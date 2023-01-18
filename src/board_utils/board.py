@@ -2,11 +2,10 @@ import cv2
 import numpy as np
 import itertools
 
-from typing import List
+from typing import List, Dict, Tuple
 from scipy.signal import convolve2d
 from matplotlib import pyplot as plt
 from pprint import pprint
-
 
 
 class Board:
@@ -76,7 +75,6 @@ def convert_frame_to_square_vertices(row_seq: List[int], col_seq: List[int], boa
     return squares_idx.astype(int)
 
 
-
 def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
     """Finds the indices of the edges on the board along a single axis
     The axis is explicitly passed through the `seq` variable
@@ -107,7 +105,7 @@ def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
 
     # calculate absolute idx in row/column
     # start_pad_size is used to adjust the indices due to the padding
-    frame_split_idx = [idx + fragment_size*i - start_pad_size for i, idx in enumerate(max_len_idx_per_row)]
+    frame_split_idx = [idx + fragment_size * i - start_pad_size for i, idx in enumerate(max_len_idx_per_row)]
 
     print(max_len_idx_per_row)
     print(frame_split_idx)
@@ -117,12 +115,6 @@ def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
     print(edges_margins)
 
     return edges_margins
-
-
-def _print(seq1, seq2):
-    for i, (val1, val2) in enumerate(zip(seq1, seq2)):
-        print(f'{i}: {int(val1)}   {int(val2)}')
-
 
 
 def pad_fragments(fragments: List[np.ndarray]) -> np.ndarray:
@@ -232,45 +224,64 @@ def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
     return max_seq_len_per_row_no_holes
 
 
-if __name__ == "__main__":
-    path = "../../data/real_board.png"
-    image = cv2.imread(path)
+def get_edge_image(image: np.ndarray, threshold: int = 50) -> np.ndarray:
+    edges = cv2.Canny(image, 50, 250)
+    edges[edges < threshold] = 0
+    edges[edges >= threshold] = 1
 
-    print('Image shape:', image.shape[:2])
+    return edges
+
+
+def crop_image(image: np.ndarray, edges: np.ndarray) -> np.ndarray:
+    cropped_edges, cropped_row_seq, cropped_col_seq, x_crop, y_crop = crop_by_seq(edges)
+    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]
+
+    return cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq
+
+
+def split_board_image_to_squares(image: np.ndarray, cropped_row_seq: np.ndarray, cropped_col_seq: np.ndarray,
+                                 board_side_size: int = 8) -> List[List[np.ndarray]]:
+
+    board_square_vertices = convert_frame_to_square_vertices(cropped_row_seq, cropped_col_seq)
+
+    board_squares = [[None] * board_side_size] * board_side_size
+
+    for i in range(board_side_size):
+        for j in range(board_side_size):
+            square_idx = board_square_vertices[i, j]
+            square = image[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
+            board_squares[i][j] = square
+
+    return board_squares
+
+
+def parse_board(image: np.ndarray) -> List[List[np.ndarray]]:
+    edges = get_edge_image(image)
+
+    cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges)
+
+    board_squares = split_board_image_to_squares(cropped_image, cropped_row_seq, cropped_col_seq)
+
+    return board_squares
+
+
+if __name__ == "__main__":
+    path = "../../old_data/real_board.png"
+    _image = cv2.imread(path)
+
+    print('Image shape:', _image.shape[:2])
     print()
 
     # edge detector
-    _edges = cv2.Canny(image, 50, 250)
-    _edges[_edges < 50] = 0
-    _edges[_edges >= 50] = 1
+    _edges = get_edge_image(_image)
 
-    _cropped_edges, _cropped_row_seq, _cropped_col_seq, x_crop, y_crop = crop_by_seq(_edges)
-    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]
+    _cropped_image, _cropped_edges, _cropped_row_seq, _cropped_col_seq = crop_image(_image, _edges)
 
     print('Cropped size:', _cropped_edges.shape)
     print()
 
-    board_square_vertices = convert_frame_to_square_vertices(_cropped_row_seq, _cropped_col_seq)
-    print(board_square_vertices)
-    print(board_square_vertices.shape)
+    split_board_image_to_squares(_cropped_image, _cropped_row_seq, _cropped_col_seq)
 
-
-    square_idx = board_square_vertices[2, 4]
-    square = cropped_image[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
-    square_edges = _cropped_edges[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
-
-    resized = cv2.resize(square, (200, 200), interpolation=cv2.INTER_CUBIC)
-    cv2.imwrite('cubic.png', resized)
-
-    sift_feature_extractor = cv2.SIFT_create()
-    gray_square = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
-    key_points, descriptors = sift_feature_extractor.detectAndCompute(gray_square, None)
-
-    img = cv2.drawKeypoints(gray_square,
-                            key_points,
-                            resized,
-                            flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-    cv2.imwrite('keypoints.png', img)
 
     # TODO: get piece templates
     # TODO: decide how to match between templates to cropped pieces
