@@ -73,7 +73,7 @@ def convert_frame_to_square_vertices(row_seq: List[int], col_seq: List[int], boa
             right_row_idx = right_col_idx_margins[0]
             squares_idx[i, j] = (top_row_idx, left_row_idx, bottom_row_idx, right_row_idx)
 
-    return squares_idx
+    return squares_idx.astype(int)
 
 
 
@@ -245,10 +245,32 @@ if __name__ == "__main__":
     _edges[_edges >= 50] = 1
 
     _cropped_edges, _cropped_row_seq, _cropped_col_seq, x_crop, y_crop = crop_by_seq(_edges)
+    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]
 
     print('Cropped size:', _cropped_edges.shape)
     print()
 
-    board_square_vertices = convert_frame_to_square_vertices(_cropped_edges, _cropped_row_seq, _cropped_col_seq)
+    board_square_vertices = convert_frame_to_square_vertices(_cropped_row_seq, _cropped_col_seq)
+    print(board_square_vertices)
+    print(board_square_vertices.shape)
+
+
+    square_idx = board_square_vertices[2, 4]
+    square = cropped_image[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
+    square_edges = _cropped_edges[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
+
+    resized = cv2.resize(square, (200, 200), interpolation=cv2.INTER_CUBIC)
+    cv2.imwrite('cubic.png', resized)
+
+    sift_feature_extractor = cv2.SIFT_create()
+    gray_square = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
+    key_points, descriptors = sift_feature_extractor.detectAndCompute(gray_square, None)
+
+    img = cv2.drawKeypoints(gray_square,
+                            key_points,
+                            resized,
+                            flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    cv2.imwrite('keypoints.png', img)
+
     # TODO: get piece templates
     # TODO: decide how to match between templates to cropped pieces
