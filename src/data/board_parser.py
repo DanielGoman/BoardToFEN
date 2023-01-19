@@ -31,10 +31,7 @@ def board_to_pieces():
                 image = cv2.imread(str(file_path))
 
                 # TODO: check if the image has already been parsed
-                # TODO: this needs to be improved, need to also include empty squares
-                # TODO: no need to have many copies of pawns, remove 6 of each color (keep one on white
-                #           square and one on a black square)
-                # TODO: save piece labels
+                # TODO: downsamples pawns/empty squares
 
                 board_squares_dict = parse_board(image=image)
 

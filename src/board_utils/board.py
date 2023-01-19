@@ -287,4 +287,4 @@ if __name__ == "__main__":
 
 
     # TODO: get piece templates
-    # TODO: decide how to match between templates to cropped pieces
+    # TODO: decide how to match between templates to cropped squares
