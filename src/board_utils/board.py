@@ -240,17 +240,20 @@ def crop_image(image: np.ndarray, edges: np.ndarray) -> np.ndarray:
 
 
 def split_board_image_to_squares(image: np.ndarray, cropped_row_seq: np.ndarray, cropped_col_seq: np.ndarray,
-                                 board_side_size: int = 8) -> List[List[np.ndarray]]:
+                                 board_side_size: int = 8) -> Dict[Tuple[int, int], np.ndarray]:
 
     board_square_vertices = convert_frame_to_square_vertices(cropped_row_seq, cropped_col_seq)
 
-    board_squares = [[None] * board_side_size] * board_side_size
+    board_squares = {}
 
+    fig, axs = plt.subplots(8, 8)
     for i in range(board_side_size):
         for j in range(board_side_size):
             square_idx = board_square_vertices[i, j]
             square = image[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
-            board_squares[i][j] = square
+            board_squares[(i, j)] = square
+            axs[i][j].imshow(square)
+    plt.show()
 
     return board_squares
 

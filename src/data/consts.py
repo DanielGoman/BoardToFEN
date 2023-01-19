@@ -15,7 +15,7 @@ OUTPUT_DIR_PATH = DATA_DIR / OUTPUT_DIR_NAME
 
 # Relevant squares to parse in each type of input board
 BOARD_SIDE_SIZE = 8
-RELEVANT_SQUARES = {'full_boards': {'rows': [0, 1, -2, -1],
+RELEVANT_SQUARES = {'full_boards': {'rows': [0, 1, 6, 7],
                                     'cols': range(BOARD_SIDE_SIZE)
                                     },
                     'replaced_king_queen': {'rows': [0, -1],
