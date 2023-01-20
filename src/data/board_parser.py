@@ -76,10 +76,13 @@ def save_squares(labeled_squares_dict: Dict[Tuple[int, int], np.ndarray], labels
         print(f'Writing {str(full_out_file_name)}')
         cv2.imwrite(str(out_file_path), square_data['square'])
 
-        labels_dict[out_file_name] = {'piece_type': square_data['labels'][0],
-                                      'piece_color': square_data['labels'][1]}
+        if stripped_file_name not in labels_dict.keys():
+            labels_dict[stripped_file_name] = {}
+        labels_dict[stripped_file_name][str((i, j))] = {'piece_type': square_data['labels'][0],
+                                                        'piece_color': square_data['labels'][1],
+                                                        'image_file_name': full_out_file_name}
 
-    json.dump(labels_dict, out_json)
+    json.dump(labels_dict, out_json, indent=4, sort_keys=True)
 
 
 if __name__ == "__main__":

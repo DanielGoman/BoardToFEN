@@ -23,15 +23,15 @@ def get_piece_labels(x: int, y: int, board_type: str) -> Tuple[int, int]:
             elif x == 8:
                 piece_color = 'B'
 
-            if y == 0 or y == 7:
+            if y == 1 or y == 8:
                 piece_type = 'R'
-            elif y == 1 or y == 6:
+            elif y == 2 or y == 7:
                 piece_type = 'N'
-            elif y == 2 or y == 5:
+            elif y == 3 or y == 6:
                 piece_type = 'B'
-            elif y == 3:
+            elif y == 4:
                 piece_type = 'Q'
-            elif piece_type == 4:
+            elif piece_type == 5:
                 piece_type = 'K'
 
     elif board_type == str(DIRS_TO_PARSE_NAMES[1]):
