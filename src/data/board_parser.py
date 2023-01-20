@@ -22,9 +22,13 @@ def board_to_pieces():
             labels_dict = {}
 
         for i, data_dir in enumerate(data_dirs):
+            data_dir_name = str(DIRS_TO_PARSE_NAMES[i])
+            if data_dir_name not in labels_dict:
+                labels_dict[data_dir_name] = {}
+
             for file_name in os.listdir(data_dir):
-                data_dir_name = str(DIRS_TO_PARSE_NAMES[i])
                 file_path = data_dir / file_name
+                stripped_file_name = '.'.join(file_name.split('.')[:-1])
 
                 print(f'Parsing {str(file_path)}')
 
@@ -40,8 +44,11 @@ def board_to_pieces():
 
                 labeled_squares_dict = label_squares(relevant_squares_dict, data_dir_name)
 
-                save_squares(labeled_squares_dict=labeled_squares_dict, labels_dict=labels_dict, file_name=file_name,
-                             out_json=labels_json)
+                labels_dict[data_dir_name][stripped_file_name] = save_squares(labeled_squares_dict=labeled_squares_dict,
+                                                                              data_dir_index=i,
+                                                                              stripped_file_name=stripped_file_name)
+
+        json.dump(labels_dict, labels_json, indent=4, sort_keys=True)
 
 
 def get_relevant_squares(board_squares: List[List[np.ndarray]], relevant_squares: Dict[str, List[int]]) \
@@ -65,24 +72,20 @@ def label_squares(squares_dict: Dict[Tuple[int, int], np.ndarray], board_type: s
     return labeled_squares_dict
 
 
-def save_squares(labeled_squares_dict: Dict[Tuple[int, int], np.ndarray], labels_dict: dict, file_name: str,
-                 out_json: str):
+def save_squares(labeled_squares_dict: Dict[Tuple[int, int], np.ndarray], data_dir_index: int, stripped_file_name: str):
+    labels_dict = {}
     for (i, j), square_data in labeled_squares_dict.items():
-        stripped_file_name = '.'.join(file_name.split('.')[:-1])
-        out_file_name = f'{stripped_file_name}_{i}_{j}'
-        full_out_file_name = f'{out_file_name}.png'
-        out_file_path = PIECES_OUTPUT_DIR_PATH / full_out_file_name
+        out_file_name = f'{data_dir_index}_{stripped_file_name}_{i}_{j}.png'
+        out_file_path = PIECES_OUTPUT_DIR_PATH / out_file_name
 
-        print(f'Writing {str(full_out_file_name)}')
+        print(f'Writing {str(out_file_name)}')
         cv2.imwrite(str(out_file_path), square_data['square'])
 
-        if stripped_file_name not in labels_dict.keys():
-            labels_dict[stripped_file_name] = {}
-        labels_dict[stripped_file_name][str((i, j))] = {'piece_type': square_data['labels'][0],
-                                                        'piece_color': square_data['labels'][1],
-                                                        'image_file_name': full_out_file_name}
+        labels_dict[str((i, j))] = {'piece_type': square_data['labels'][0],
+                                    'piece_color': square_data['labels'][1],
+                                    'image_file_name': out_file_name}
 
-    json.dump(labels_dict, out_json, indent=4, sort_keys=True)
+    return labels_dict
 
 
 if __name__ == "__main__":
