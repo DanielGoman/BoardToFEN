@@ -93,13 +93,12 @@ def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
     split_idx = np.arange(fragment_size // 2, len(seq), fragment_size)
     fragments = np.split(seq, split_idx)
 
-    pprint(fragments)
-    print()
-
     padded_fragments, start_pad_size, end_pad_size = pad_fragments(fragments)
 
-    conv_mat = np.ones((1, 3))
-    conv_fragments = convolve2d(padded_fragments, conv_mat, mode='same')
+    # convolving the sequence with a filter to account for edges spreading over more than a single pixel
+    conv_filter = [0.5, 1, 0.5]
+    conv_filter = np.array(conv_filter).reshape((-1, 1))
+    conv_fragments = convolve2d(padded_fragments, conv_filter, mode='same')
 
     max_len_idx_per_row = np.argmax(conv_fragments, axis=1)
 
@@ -107,12 +106,8 @@ def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
     # start_pad_size is used to adjust the indices due to the padding
     frame_split_idx = [idx + fragment_size * i - start_pad_size for i, idx in enumerate(max_len_idx_per_row)]
 
-    print(max_len_idx_per_row)
-    print(frame_split_idx)
-
     # pad margins
     edges_margins = [(max(0, idx - margin_size), min(len(seq) - 1, idx + margin_size)) for idx in frame_split_idx]
-    print(edges_margins)
 
     return edges_margins
 
@@ -269,14 +264,14 @@ def parse_board(image: np.ndarray) -> List[List[np.ndarray]]:
 
 
 if __name__ == "__main__":
-    path = "../../old_data/real_board.png"
+    path = "../../dataset/full_boards/31.png"
     _image = cv2.imread(path)
 
     print('Image shape:', _image.shape[:2])
     print()
 
     # edge detector
-    _edges = get_edge_image(_image)
+    _edges = get_edge_image(_image, threshold=200)
 
     _cropped_image, _cropped_edges, _cropped_row_seq, _cropped_col_seq = crop_image(_image, _edges)
 
