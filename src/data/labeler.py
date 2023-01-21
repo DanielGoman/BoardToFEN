@@ -4,8 +4,8 @@ from consts.path_consts import DIRS_TO_PARSE_NAMES
 
 
 def get_piece_labels(x: int, y: int, board_type: str) -> Tuple[int, int]:
-    piece_type = ''
-    piece_color = ''
+    piece_type = 'X'
+    piece_color = 'X'
 
     if x not in [1, 2, 7, 8]:
         piece_type = 'X'
@@ -35,7 +35,6 @@ def get_piece_labels(x: int, y: int, board_type: str) -> Tuple[int, int]:
                 piece_type = 'K'
 
     elif board_type == str(DIRS_TO_PARSE_NAMES[1]):
-        piece_type = ''
 
         if x == 1:
             piece_color = 'W'
