@@ -10,3 +10,5 @@ TRAIN:
   num_workers: -1
   momentum: 0.9
   num_epochs: 1
+  print_interval: 200
+  model_path: ../../saved_model/model.pkl
