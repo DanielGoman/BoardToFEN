@@ -1,22 +1,20 @@
 import json
+import torch
+import torchvision
+
 from typing import Dict
-
-import tensorflow as tf
-from tensorflow import keras
-
-from pprint import pprint
 
 from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR
 
 
-class DataLoader:
+class PiecesDataset:
     def __init__(self, images_dir_path: str, labels_path, transforms, dtype = 'float32'):
         self.dtype = dtype
         self.labels_dict = self.load_labels(labels_path)
         self.labels = self.transform_labels(self.labels_dict)
 
     @staticmethod
-    def load_labels(labels_path: str) -> tf.Tensor:
+    def load_labels(labels_path: str) -> torch.Tensor:
         with open(labels_path, 'r') as labels_json:
             labels_dict = json.load(labels_json)
             single_labels_dict = {}
@@ -45,6 +43,6 @@ class DataLoader:
 
 
 if __name__ == "__main__":
-    DataLoader(images_dir_path=None,
-               labels_path='../../dataset/labels/labels.json',
-               transforms=None)
+    PiecesDataset(images_dir_path=None,
+                  labels_path='../../dataset/labels/labels.json',
+                  transforms=None)
