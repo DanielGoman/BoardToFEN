@@ -27,6 +27,16 @@ class PiecesDataset(Dataset):
 
     @staticmethod
     def load_labels(labels_path: str) -> Dict[str, Dict[str, str]]:
+        """Loads all the labels from a json file into a dictionary
+
+        Args:
+            labels_path: path to the json file that contains all the labels
+
+        Returns:
+            single_labels_dict: dictionary that for every image name contains respective labels of
+                                    'piece_color' and 'piece_type'
+
+        """
         with open(labels_path, 'r') as labels_json:
             labels_dict = json.load(labels_json)
             single_labels_dict = {}
@@ -45,6 +55,16 @@ class PiecesDataset(Dataset):
 
     def create_imagepath_labels_pairs(self, images_dir_path: str, labels_dict: Dict[str, Dict[str, str]]) \
                                         -> Dict[str, Dict[str, Dict[str, str]]]:
+        """Creates a dictionary that for every image name contains path to the respective image and the labels
+
+        Args:
+            images_dir_path: path to the directory that contains the images
+            labels_dict: the dictionary that contains the labels for each image
+
+        Returns:
+            path_labels_pairs_dict: dictionary of pairs of (image_path, image_labels) for every image name
+
+        """
         path_labels_pairs_dict = {}
         for image_name, image_labels in labels_dict.items():
             full_image_name = f'{image_name}.{self.images_extension}'
