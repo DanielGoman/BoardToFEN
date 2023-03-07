@@ -1,5 +1,6 @@
 import json
 import os
+import yaml
 
 import torch
 import torch.nn.functional as F
@@ -15,14 +16,13 @@ from src.model.consts import default_transforms
 
 
 class PiecesDataset(Dataset):
-    def __init__(self, images_dir_path: str, labels_path, transforms: list = default_transforms, dtype='float32', images_extension: str = 'png',
-                 device: str = 'cpu'):
+    def __init__(self, images_dir_path: str, labels_path, transforms: list = default_transforms, dtype='float32',
+                 images_extension: str = 'png', device: str = 'cpu'):
         self.dtype = dtype
         self.images_extension = images_extension
         self.device = device
         self.transforms = torchvision.transforms.Compose(transforms)
         self.labels_dict = self.load_labels(labels_path)
-        # self.labels = self.transform_labels(self.labels_dict)
 
         num_images = len(os.listdir(images_dir_path))
         num_labels = len(self.labels_dict)
@@ -135,9 +135,10 @@ class PiecesDataset(Dataset):
 
 
 if __name__ == "__main__":
-    images_dir_path_ = r'../../dataset/squares'
-    labels_path_ = r'../../dataset/labels/labels.json'
-    dataset = PiecesDataset(images_dir_path=images_dir_path_,
-                            labels_path=labels_path_)
-
-
+    with open('config.yaml') as yaml_file:
+        configs = yaml.safe_load(yaml_file)
+        images_dir_path_ = configs['DATA_PATHS']['IMAGE_DIR_PATH']
+        labels_path_ = configs['DATA_PATHS']['LABELS_JSON_PATH']
+        dataset = PiecesDataset(images_dir_path=images_dir_path_,
+                                labels_path=labels_path_)
+        a = 3

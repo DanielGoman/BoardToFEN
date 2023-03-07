@@ -1,0 +1,5 @@
+
+DATA_PATHS:
+  IMAGE_DIR_PATH: ../../dataset/squares
+  LABELS_JSON_PATH: ../../dataset/labels/labels.json
+
