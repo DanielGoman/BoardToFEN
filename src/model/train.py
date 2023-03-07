@@ -53,6 +53,7 @@ def train():
             type_pred, color_pred = model(image)
 
             loss = criterion(type_pred, type_label)
+            # TODO: fix this, is_piece may be a vector, therefore we can't have this condition
             if is_piece:
                 loss += criterion(color_pred, color_label)
 
