@@ -5,6 +5,7 @@ import torch.nn as nn
 
 from src.model.dataset import PiecesDataset
 from src.model.consts import CONFIG_PATH
+from src.data.consts.piece_consts import REVERSED_PIECE_TYPE
 
 
 def train():
@@ -72,6 +73,39 @@ def train():
     print('Saving model')
     model_scripted = torch.jit.script(model)
     model_scripted.save(model_path)
+
+    model = torch.jit.load(model_path)
+    model.eval()
+
+
+
+
+
+def eval_model(model, loader: torch.data.utils.DataLoader, state: str):
+    with torch.no_grad():
+        num_piece_classes = len(REVERSED_PIECE_TYPE)
+
+        type_accuracy = torch.zeros(num_piece_classes)
+        type_counts = torch.zeros(num_piece_classes)
+        color_accuracy = torch.zeros(num_piece_classes)
+        color_counts = torch.zeros(num_piece_classes)
+
+        for image, type_label, color_label, is_piece in loader:
+            type_pred_probs, color_pred_probs = model(image)
+            type_pred = torch.argmax(type_pred_probs, axis=1)
+            color_pred = torch.argmax(color_pred_probs, axis=1)
+
+            type_label = torch.argmax(type_label, axis=1)
+            color_label = torch.argmax(color_label, axis=1)
+
+            type_accuracy[type_label] += (type_pred == type_label).to(torch.int64)
+            type_counts[type_label] += 1
+
+            # TODO: evaluate accuracy for color. Issue is that sometimes there is no piece on the board (empty square)
+            color_counts = pass
+
+
+
 
 
 if __name__ == "__main__":
