@@ -11,7 +11,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from typing import Dict, List
 
-from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR
+from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR, NON_PIECE
 from src.model.consts import default_transforms
 
 
@@ -72,13 +72,15 @@ class PiecesDataset(Dataset):
 
         """
         one_hot_piece_type, one_hot_piece_color = self.transform_labels(labels_dict)
+        is_piece = [piece_type == NON_PIECE for piece_type, piece_color in labels_dict.values()]
         path_labels_pairs_dict = []
         for idx, image_name in enumerate(labels_dict):
             full_image_name = f'{image_name}.{self.images_extension}'
             image_path = os.path.join(images_dir_path, full_image_name)
 
             one_hot_image_labels = {'piece_type': one_hot_piece_type[idx],
-                                    'piece_color': one_hot_piece_color[idx]}
+                                    'piece_color': one_hot_piece_color[idx],
+                                    'is_piece': is_piece[idx]}
 
             path_labels_pair = {'image_path': image_path,
                                 'labels': one_hot_image_labels}
@@ -127,11 +129,12 @@ class PiecesDataset(Dataset):
 
         piece_type = image_labels['piece_type']
         piece_color = image_labels['piece_color']
+        is_piece = image_labels['is_piece']
 
         image = Image.open(image_path)
         transformed_image = self.transforms(image)
 
-        return transformed_image, piece_type, piece_color
+        return transformed_image, piece_type, piece_color, is_piece
 
 
 if __name__ == "__main__":
