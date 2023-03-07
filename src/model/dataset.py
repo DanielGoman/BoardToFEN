@@ -87,7 +87,17 @@ class PiecesDataset(Dataset):
         return path_labels_pairs_dict
 
     @staticmethod
-    def transform_labels(labels_dict: Dict[str, Dict[str, str]]):
+    def transform_labels(labels_dict: Dict[str, Dict[str, str]]) -> (torch.Tensor, torch.Tensor):
+        """Transforms the labels into one hot encodings
+
+        Args:
+            labels_dict: the dictionary that contains the labels for each image
+
+        Returns:
+            one_hot_types: a tensor of one hot encodings of the piece types
+            one_hot_colors: a tensor of one hot encodings of the piece colors
+
+        """
         piece_type_labels = [PIECE_TYPE[item['piece_type']] for item in labels_dict.values()]
         piece_color_labels = [PIECE_COLOR[item['piece_color']] for item in labels_dict.values()]
 
@@ -100,6 +110,17 @@ class PiecesDataset(Dataset):
         return len(self.image_path_labels_pairs)
 
     def __getitem__(self, idx: int):
+        """getitem method for this class
+
+        Args:
+            idx: index of the element to retrieve
+
+        Returns:
+            transformed_image: input image after transformations
+            piece_type: one hot encoding of piece type
+            piece_color: one hot encoding of the piece color
+
+        """
         imagepath_labels_pair = self.image_path_labels_pairs[idx]
         image_path = imagepath_labels_pair['image_path']
         image_labels = imagepath_labels_pair['labels']
