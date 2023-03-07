@@ -1,19 +1,26 @@
 import json
 import os
+
 import torch
+import torch.nn.functional as F
 import torchvision
 
+from PIL import Image
+
 from torch.utils.data import Dataset
-from typing import Dict
+from typing import Dict, List
 
 from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR
+from src.model.consts import default_transforms
 
 
 class PiecesDataset(Dataset):
-    def __init__(self, images_dir_path: str, labels_path, transforms, dtype='float32', images_extension: str = 'png'):
+    def __init__(self, images_dir_path: str, labels_path, transforms: list = default_transforms, dtype='float32', images_extension: str = 'png',
+                 device: str = 'cpu'):
         self.dtype = dtype
-        self.transforms = transforms
         self.images_extension = images_extension
+        self.device = device
+        self.transforms = torchvision.transforms.Compose(transforms)
         self.labels_dict = self.load_labels(labels_path)
         # self.labels = self.transform_labels(self.labels_dict)
 
@@ -23,7 +30,6 @@ class PiecesDataset(Dataset):
             raise FileExistsError(f"Number of images ({num_images}) does not match number of labels ({num_labels})")
 
         self.image_path_labels_pairs = self.create_imagepath_labels_pairs(images_dir_path, self.labels_dict)
-        a = 5
 
     @staticmethod
     def load_labels(labels_path: str) -> Dict[str, Dict[str, str]]:
@@ -54,47 +60,63 @@ class PiecesDataset(Dataset):
         return single_labels_dict
 
     def create_imagepath_labels_pairs(self, images_dir_path: str, labels_dict: Dict[str, Dict[str, str]]) \
-                                        -> Dict[str, Dict[str, Dict[str, str]]]:
-        """Creates a dictionary that for every image name contains path to the respective image and the labels
+            -> List[Dict[str, Dict[str, str]]]:
+        """Creates a list that for every image name contains path to the respective image and the labels
 
         Args:
             images_dir_path: path to the directory that contains the images
             labels_dict: the dictionary that contains the labels for each image
 
         Returns:
-            path_labels_pairs_dict: dictionary of pairs of (image_path, image_labels) for every image name
+            path_labels_pairs_dict: list of pairs of (image_path, image_labels) for every image name
 
         """
-        path_labels_pairs_dict = {}
-        for image_name, image_labels in labels_dict.items():
+        one_hot_piece_type, one_hot_piece_color = self.transform_labels(labels_dict)
+        path_labels_pairs_dict = []
+        for idx, image_name in enumerate(labels_dict):
             full_image_name = f'{image_name}.{self.images_extension}'
             image_path = os.path.join(images_dir_path, full_image_name)
+
+            one_hot_image_labels = {'piece_type': one_hot_piece_type[idx],
+                                    'piece_color': one_hot_piece_color[idx]}
+
             path_labels_pair = {'image_path': image_path,
-                                'labels': image_labels}
-            path_labels_pairs_dict[image_name] = path_labels_pair
+                                'labels': one_hot_image_labels}
+            path_labels_pairs_dict.append(path_labels_pair)
 
         return path_labels_pairs_dict
 
-    def transform_labels(self, labels_dict: Dict[str, Dict[str, str]]):
+    @staticmethod
+    def transform_labels(labels_dict: Dict[str, Dict[str, str]]):
         piece_type_labels = [PIECE_TYPE[item['piece_type']] for item in labels_dict.values()]
         piece_color_labels = [PIECE_COLOR[item['piece_color']] for item in labels_dict.values()]
 
-        one_hot_types = keras.utils.to_categorical(piece_type_labels, num_classes=len(PIECE_TYPE), dtype=self.dtype)
-        one_hot_colors = keras.utils.to_categorical(piece_color_labels, num_classes=len(PIECE_COLOR), dtype=self.dtype)
+        one_hot_types = F.one_hot(torch.Tensor(piece_type_labels).to(torch.long))
+        one_hot_colors = F.one_hot(torch.Tensor(piece_color_labels).to(torch.long))
 
-        # TODO: complete the transform into a single matrix with type and color feature encoded
-        #       proceed to loading the image dataset and applying transformations
+        return one_hot_types, one_hot_colors
 
     def __len__(self):
-        pass
+        return len(self.image_path_labels_pairs)
 
     def __getitem__(self, idx: int):
-        pass
+        imagepath_labels_pair = self.image_path_labels_pairs[idx]
+        image_path = imagepath_labels_pair['image_path']
+        image_labels = imagepath_labels_pair['labels']
+
+        piece_type = image_labels['piece_type']
+        piece_color = image_labels['piece_color']
+
+        image = Image.open(image_path)
+        transformed_image = self.transforms(image)
+
+        return transformed_image, piece_type, piece_color
 
 
 if __name__ == "__main__":
     images_dir_path_ = r'../../dataset/squares'
     labels_path_ = r'../../dataset/labels/labels.json'
-    PiecesDataset(images_dir_path=images_dir_path_,
-                  labels_path=labels_path_,
-                  transforms=None)
+    dataset = PiecesDataset(images_dir_path=images_dir_path_,
+                            labels_path=labels_path_)
+
+
