@@ -56,9 +56,9 @@ def train(config: DictConfig):
             type_pred, color_pred = model(image)
 
             loss = criterion(type_pred, type_label)
-            # TODO: fix this, is_piece may be a vector, therefore we can't have this condition
-            if is_piece:
-                loss += criterion(color_pred, color_label)
+
+            is_piece_idx = is_piece.nonzero()
+            loss += criterion(color_pred[is_piece_idx], color_label[is_piece_idx])
 
             loss.backward()
             optimizer.step()
