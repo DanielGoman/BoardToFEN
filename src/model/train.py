@@ -1,30 +1,33 @@
-import yaml
-
+import hydra
 import torch
 import torch.nn as nn
 
+from omegaconf import DictConfig
+
 from src.model.dataset import PiecesDataset
-from src.model.consts import CONFIG_PATH
+from src.model.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
 
 
-def train():
-    yaml_file = open(CONFIG_PATH)
-    configs = yaml.safe_load(yaml_file)
-    data_configs = configs['DATA']
-    train_configs = configs['TRAIN']
+@hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
+def train(config: DictConfig):
+    train_size_ratio = config.hyperparams.train.train_size
+    batch_size = config.hyperparams.train.batch_size
+    num_workers = config.hyperparams.train.num_workers
+    lr = config.hyperparams.train.lr
+    momentum = config.hyperparams.train.momentum
+    num_epochs = config.hyperparams.train.num_epochs
+    print_interval = config.hyperparams.train.print_interval
+    model_path = config.paths.model_paths.model_path
 
-    train_size_ratio = train_configs['train_size']
-    batch_size = train_configs['batch_size']
-    num_workers = train_configs['num_workers']
-    lr = train_configs['lr']
-    momentum = train_configs['momentum']
-    num_epochs = train_configs['num_epochs']
-    print_interval = train_configs['print_interval']
-    model_path = train_configs['model_path']
+    images_dir_path = config.paths.data_paths.image_dir_path
+    labels_path = config.paths.data_paths.labels_json_path
 
-    dataset = PiecesDataset(images_dir_path=data_configs['IMAGE_DIR_PATH'],
-                            labels_path=data_configs['LABELS_JSON_PATH'])
+    transforms = [hydra.utils.instantiate(transform) for transform in config.transforms.values()]
+
+    dataset = PiecesDataset(images_dir_path=images_dir_path,
+                            labels_path=labels_path,
+                            transforms=transforms)
 
     train_size = int(train_size_ratio * len(dataset))
     test_size = len(dataset) - train_size
@@ -54,8 +57,9 @@ def train():
             type_pred, color_pred = model(image)
 
             loss = criterion(type_pred, type_label)
-            if is_piece:
-                loss += criterion(color_pred, color_label)
+
+            is_piece_idx = is_piece.nonzero()
+            loss += criterion(color_pred[is_piece_idx], color_label[is_piece_idx])
 
             loss.backward()
             optimizer.step()

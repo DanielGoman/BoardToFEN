@@ -1,0 +1,6 @@
+
+defaults:
+  - _self_
+  - transforms: transforms.yaml
+  - hyperparams: hyperparams.yaml
+  - paths: paths.yaml

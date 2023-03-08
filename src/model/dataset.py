@@ -2,10 +2,12 @@ import json
 import os
 import yaml
 
+import hydra
 import torch
 import torch.nn.functional as F
 import torchvision
 
+from omegaconf import DictConfig
 from PIL import Image
 
 from torch.utils.data import Dataset
@@ -16,12 +18,13 @@ from src.model.consts import default_transforms
 
 
 class PiecesDataset(Dataset):
-    def __init__(self, images_dir_path: str, labels_path, transforms: list = default_transforms, dtype='float32',
+    def __init__(self, images_dir_path: str, labels_path, transforms: list = None, dtype='float32',
                  images_extension: str = 'png', device: str = 'cpu'):
         self.dtype = dtype
         self.images_extension = images_extension
         self.device = device
-        self.transforms = torchvision.transforms.Compose(transforms)
+        if transforms:
+            self.transforms = torchvision.transforms.Compose(transforms)
         self.labels_dict = self.load_labels(labels_path)
 
         num_images = len(os.listdir(images_dir_path))
@@ -137,11 +140,14 @@ class PiecesDataset(Dataset):
         return transformed_image, piece_type, piece_color, is_piece
 
 
+@hydra.main(config_path=r'../../configs/', config_name=r'train.yaml', version_base='1.2')
+def test_run(config: DictConfig):
+    images_dir_path_ = config.paths.data_paths.image_dir_path
+    labels_path_ = config.paths.data_paths.labels_json_path
+    dataset = PiecesDataset(images_dir_path=images_dir_path_,
+                            labels_path=labels_path_)
+
+
 if __name__ == "__main__":
-    with open('config.yaml') as yaml_file:
-        configs = yaml.safe_load(yaml_file)
-        images_dir_path_ = configs['DATA_PATHS']['IMAGE_DIR_PATH']
-        labels_path_ = configs['DATA_PATHS']['LABELS_JSON_PATH']
-        dataset = PiecesDataset(images_dir_path=images_dir_path_,
-                                labels_path=labels_path_)
-        a = 3
+    test_run()
+
