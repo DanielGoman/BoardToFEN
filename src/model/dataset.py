@@ -63,7 +63,7 @@ class PiecesDataset(Dataset):
         return single_labels_dict
 
     def create_imagepath_labels_pairs(self, images_dir_path: str, labels_dict: Dict[str, Dict[str, str]]) \
-            -> List[Dict[str, Dict[str, str]]]:
+            -> List[Dict[str, Dict[str, torch.Tensor]]]:
         """Creates a list that for every image name contains path to the respective image and the labels
 
         Args:
@@ -75,7 +75,7 @@ class PiecesDataset(Dataset):
 
         """
         one_hot_piece_type, one_hot_piece_color = self.transform_labels(labels_dict)
-        is_piece = [piece_type == NON_PIECE for piece_type, piece_color in labels_dict.values()]
+        is_piece = [torch.Tensor(piece_type == NON_PIECE) for piece_type, piece_color in labels_dict.values()]
         path_labels_pairs_dict = []
         for idx, image_name in enumerate(labels_dict):
             full_image_name = f'{image_name}.{self.images_extension}'
