@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from omegaconf import DictConfig
 
+from src.model.evaluate import eval_model
 from src.model.dataset import PiecesDataset
 from src.model.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 
