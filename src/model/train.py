@@ -10,7 +10,18 @@ from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COL
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
-def train(config: DictConfig):
+def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.data.DataLoader):
+    """A train script for the model over the chess pieces dataset
+
+    Args:
+        config: hydra config manager
+
+    Returns:
+        model_path: path to the saved model
+        train_loader: train loader which was used to train the model
+        test_loader: test loader with test data
+
+    """
     train_size_ratio = config.hyperparams.train.train_size
     batch_size = config.hyperparams.train.batch_size
     num_workers = config.hyperparams.train.num_workers
@@ -74,18 +85,22 @@ def train(config: DictConfig):
         print(f'epoch {epoch} loss: {epoch_loss / len(train_size)}:.3f\n')
 
     print('Finished training\n')
-    print('Saving model')
+    print(f'Saving model to {model_path}')
     model_scripted = torch.jit.script(model)
     model_scripted.save(model_path)
 
-    model = torch.jit.load(model_path)
-    model.eval()
-
-    eval_model(model, train_loader, state='train')
-    eval_model(model, test_loader, state='test')
+    return model_path, train_loader, test_loader
 
 
 def eval_model(model, loader: torch.data.utils.DataLoader, state: str):
+    """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
+
+    Args:
+        model: trained model
+        loader: data loader with a dataset to test the performance of the model over
+        state: the type of dataset the model is run on (train or test)
+
+    """
     with torch.no_grad():
         num_piece_classes = len(REVERSED_PIECE_TYPE)
         num_piece_colors = len(REVERSED_PIECE_COLOR) - 1
@@ -133,4 +148,11 @@ def eval_model(model, loader: torch.data.utils.DataLoader, state: str):
 
 
 if __name__ == "__main__":
-    train()
+    model_path_, train_loader_, test_loader_ = train()
+
+    model = torch.jit.load(model_path_)
+    model.eval()
+
+    eval_model(model, train_loader_, state='train')
+    eval_model(model, test_loader_, state='test')
+
