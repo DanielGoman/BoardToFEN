@@ -14,7 +14,6 @@ from torch.utils.data import Dataset
 from typing import Dict, List
 
 from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR, NON_PIECE
-from src.model.consts import default_transforms
 
 
 class PiecesDataset(Dataset):
@@ -75,7 +74,7 @@ class PiecesDataset(Dataset):
 
         """
         one_hot_piece_type, one_hot_piece_color = self.transform_labels(labels_dict)
-        is_piece = [torch.Tensor(piece_type == NON_PIECE) for piece_type, piece_color in labels_dict.values()]
+        is_piece = torch.Tensor([int(piece_info['piece_type'] != NON_PIECE) for piece_info in labels_dict.values()])
         path_labels_pairs_dict = []
         for idx, image_name in enumerate(labels_dict):
             full_image_name = f'{image_name}.{self.images_extension}'

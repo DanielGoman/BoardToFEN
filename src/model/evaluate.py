@@ -3,7 +3,7 @@ import torch
 from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
 
 
-def eval_model(model, loader: torch.data.utils.DataLoader, state: str):
+def eval_model(model, loader: torch.utils.data.DataLoader, state: str):
     """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
 
     Args:

@@ -4,3 +4,4 @@ defaults:
   - transforms: transforms.yaml
   - hyperparams: hyperparams.yaml
   - paths: paths.yaml
+  - model_params: model_params.yaml

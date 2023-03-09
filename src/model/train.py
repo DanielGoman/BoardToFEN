@@ -4,6 +4,7 @@ import torch.nn as nn
 
 from omegaconf import DictConfig
 
+from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
 from src.model.dataset import PiecesDataset
 from src.model.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
@@ -49,8 +50,14 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
                                               shuffle=False, num_workers=num_workers)
 
-    # TODO: replace this with initialization of the model
-    model = None
+    model = PieceClassifier(in_channels=config.model_params.in_channels,
+                            hidden_dim=config.model_params.hidden_dim,
+                            out_channels=config.model_params.out_channels,
+                            num_type_classes=config.model_params.num_type_classes,
+                            num_color_classes=config.model_params.num_color_classes)
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    model = model.to(device)
 
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, momentum=momentum)
@@ -65,9 +72,10 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
             optimizer.zero_grad()
 
-            type_pred, color_pred = model(image)
+            type_pred, color_pred = model(image.to(device))
+            image.detach().cpu()
 
-            loss = criterion(type_pred, type_label)
+            loss = criterion(type_pred.detach().cpu(), type_label.detach().cpu())
 
             is_piece_idx = is_piece.nonzero()
             loss += criterion(color_pred[is_piece_idx], color_label[is_piece_idx])
@@ -95,9 +103,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 if __name__ == "__main__":
     model_path_, train_loader_, test_loader_ = train()
 
-    model = torch.jit.load(model_path_)
-    model.eval()
+    model_ = torch.jit.load(model_path_)
+    model_.eval()
 
-    eval_model(model, train_loader_, state='train')
-    eval_model(model, test_loader_, state='test')
+    eval_model(model_, train_loader_, state='train')
+    eval_model(model_, test_loader_, state='test')
 
