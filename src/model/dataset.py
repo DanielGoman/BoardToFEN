@@ -105,8 +105,9 @@ class PiecesDataset(Dataset):
         piece_type_labels = [PIECE_TYPE[item['piece_type']] for item in labels_dict.values()]
         piece_color_labels = [PIECE_COLOR[item['piece_color']] for item in labels_dict.values()]
 
-        one_hot_types = F.one_hot(torch.Tensor(piece_type_labels).to(torch.long))
-        one_hot_colors = F.one_hot(torch.Tensor(piece_color_labels).to(torch.long))
+        one_hot_types = F.one_hot(torch.Tensor(piece_type_labels).to(torch.long)).to(torch.float64)
+        one_hot_colors = F.one_hot(torch.Tensor(piece_color_labels).to(torch.long)).to(torch.float64)
+        one_hot_colors = one_hot_colors[:, :-1]
 
         return one_hot_types, one_hot_colors
 

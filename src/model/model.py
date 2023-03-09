@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import torch
 import torch.nn as nn
 
@@ -14,16 +16,18 @@ class PieceClassifier(nn.Module):
         self.type_linear = nn.Linear(in_features=16 * 16, out_features=num_type_classes)
         self.color_linear = nn.Linear(in_features=16 * 16, out_features=num_color_classes)
 
-        self.type_softmax = nn.Softmax()
-        self.color_softmax = nn.Softmax()
+        self.relu = nn.ReLU()
 
-    def forward(self, x: torch.Tensor) -> (torch.Tensor, torch.Tensor):
+        self.type_softmax = nn.Softmax(dim=1)
+        self.color_softmax = nn.Softmax(dim=1)
+
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         x = self.conv_block1(x)
         x = self.conv_block2(x)
 
-        x = x.flatten()
+        x = x.flatten(start_dim=1)
         x = self.linear(x)
-        x = nn.ReLU(x)
+        x = self.relu(x)
 
         type_scores = self.type_linear(x)
         color_scores = self.color_linear(x)
@@ -43,7 +47,7 @@ class ConvBlock(nn.Module):
         self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = self.conv1(x)
+        x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
         x = self.max_pool(x)

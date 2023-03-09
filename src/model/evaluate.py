@@ -1,6 +1,6 @@
 import torch
 
-from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
+from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR, NON_PIECE, PIECE_COLOR
 
 
 def eval_model(model, loader: torch.utils.data.DataLoader, state: str):
@@ -14,7 +14,7 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str):
     """
     with torch.no_grad():
         num_piece_classes = len(REVERSED_PIECE_TYPE)
-        num_piece_colors = len(REVERSED_PIECE_COLOR) - 1
+        num_piece_colors = len(REVERSED_PIECE_COLOR)
 
         type_correct_hits = torch.zeros(num_piece_classes)
         type_counts = torch.zeros(num_piece_classes)
@@ -30,29 +30,32 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str):
             color_label = torch.argmax(color_label, axis=1)
 
             type_correct_hits[type_label] += (type_pred == type_label).to(torch.int64)
-            type_counts[type_label] += 1
+            labels_count_per_class = torch.bincount(type_label)
+            type_counts[labels_count_per_class.nonzero()] += labels_count_per_class[labels_count_per_class.nonzero()]
 
             is_piece_idx = is_piece.nonzero()
 
-            color_correct_hits[is_piece_idx][color_label] += \
-                (color_pred[is_piece_idx] == color_label[is_piece_idx]).to(torch.int64)
-            color_counts[is_piece_idx][color_label] += 1
+            if len(is_piece_idx) > 0:
+                color_correct_hits[color_label[is_piece_idx]] += \
+                    (color_pred[is_piece_idx] == color_label[is_piece_idx]).to(torch.int64)
+                color_count_per_class = torch.bincount(color_label)
+                color_counts[color_count_per_class.nonzero()] += color_count_per_class[color_count_per_class.nonzero()]
 
         type_accuracy = type_correct_hits / type_counts
         color_accuracy = color_correct_hits / color_counts
 
         print(f'\nResults over the {state} set\n')
         for piece_type, piece_name in REVERSED_PIECE_TYPE.items():
-            print(f'Accuracy for {piece_name}: {type_accuracy[piece_type]}')
+            print(f'Accuracy for {piece_name}: {type_accuracy[piece_type]:.3f}')
 
         for piece_color, color_name in REVERSED_PIECE_COLOR.items():
-            print(f'Accuracy for {color_name}: {color_accuracy[piece_color]}')
+            print(f'Accuracy for {color_name}: {color_accuracy[piece_color]:.3f}')
 
         type_rates = type_counts / type_counts.sum()
         color_rates = color_counts / color_counts.sum()
-        balanced_type_accuracy = type_accuracy * type_rates
-        balanced_color_accuracy = color_accuracy * color_rates
+        balanced_type_accuracy = type_accuracy @ type_rates
+        balanced_color_accuracy = color_accuracy @ color_rates
 
         print()
-        print(f'Balanced type accuracy:', balanced_type_accuracy)
-        print(f'Balanced color accuracy:', balanced_color_accuracy)
+        print(f'Balanced type accuracy: {balanced_type_accuracy.item():.3f}')
+        print(f'Balanced color accuracy: {balanced_color_accuracy.item():.3f}')

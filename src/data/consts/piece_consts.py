@@ -15,5 +15,5 @@ PIECE_COLOR = {'W': 0,
                NON_PIECE: 2}
 
 REVERSED_PIECE_TYPE = {val: key for key, val in PIECE_TYPE.items()}
-REVERSED_PIECE_COLOR = {val: key for key, val in PIECE_COLOR.items()}
+REVERSED_PIECE_COLOR = {val: key for key, val in PIECE_COLOR.items() if key != NON_PIECE}
 
