@@ -15,6 +15,7 @@ from src.model.dataset import PiecesDataset
 from src.model.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 
 
+@hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
 def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.data.DataLoader):
     """A train script for the model over the chess pieces dataset
 
@@ -209,12 +210,5 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[s
     plt.show()
 
 
-@hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
-def run_train_eval(config: DictConfig):
-    model_path_, train_loader_, test_loader_ = train(config=config)
-
-    model_ = torch.jit.load(model_path_)
-
-
 if __name__ == "__main__":
-    run_train_eval()
+    train()
