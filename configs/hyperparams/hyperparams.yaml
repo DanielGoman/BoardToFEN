@@ -1,0 +1,12 @@
+
+train:
+  train_size: 0.8
+  lr: 3e-4
+  batch_size: 2
+  num_workers: 4
+  num_epochs: 10
+  print_interval: 50
+  shuffle_data: False
+  random_seed: 42
+  minibatch_size: -1
+

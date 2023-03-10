@@ -1,0 +1,7 @@
+
+data_paths:
+  image_dir_path: ../../dataset/squares
+  labels_json_path: ../../dataset/labels/labels.json
+
+model_paths:
+  model_path: saved_model/model.pkl
