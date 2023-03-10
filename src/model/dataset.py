@@ -18,23 +18,25 @@ from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR, NON_PIECE
 
 class PiecesDataset(Dataset):
     def __init__(self, images_dir_path: str, labels_path, transforms: list = None, dtype='float32',
-                 images_extension: str = 'png', device: str = 'cpu'):
+                 images_extension: str = 'png', device: str = 'cpu', minibatch_size: int = None):
         self.dtype = dtype
         self.images_extension = images_extension
         self.device = device
+        self.minibatch_size = minibatch_size
+
         if transforms:
             self.transforms = torchvision.transforms.Compose(transforms)
+
         self.labels_dict = self.load_labels(labels_path)
 
         num_images = len(os.listdir(images_dir_path))
         num_labels = len(self.labels_dict)
-        if num_images != num_labels:
+        if minibatch_size == -1 and num_images != num_labels:
             raise FileExistsError(f"Number of images ({num_images}) does not match number of labels ({num_labels})")
 
         self.image_path_labels_pairs = self.create_imagepath_labels_pairs(images_dir_path, self.labels_dict)
 
-    @staticmethod
-    def load_labels(labels_path: str) -> Dict[str, Dict[str, str]]:
+    def load_labels(self, labels_path: str) -> Dict[str, Dict[str, str]]:
         """Loads all the labels from a json file into a dictionary
 
         Args:
@@ -49,13 +51,20 @@ class PiecesDataset(Dataset):
             labels_dict = json.load(labels_json)
             single_labels_dict = {}
 
+            num_collected_squares = 0
             for board_type_dict in labels_dict.values():
                 for board in board_type_dict.values():
-                    board_pieces = {'.'.join(items['image_file_name'].split('.')[:-1]):
-                                        {key: item for key, item in items.items() if key != 'image_file_name'}
-                                    for items in board.values()}
+                    # board_pieces = {'.'.join(items['image_file_name'].split('.')[:-1]):
+                    #                     {key: item for key, item in items.items() if key != 'image_file_name'}
+                    #                 for items in board.values()}
+                    for i, items in enumerate(board.values()):
+                        square_name = '.'.join(items['image_file_name'].split('.')[:-1])
+                        square_labels = {key: item for key, item in items.items() if key != 'image_file_name'}
+                        single_labels_dict[square_name] = square_labels
 
-                    single_labels_dict.update(board_pieces)
+                        num_collected_squares += 1
+                        if num_collected_squares == self.minibatch_size:
+                            return dict(sorted(single_labels_dict.items()))
 
             single_labels_dict = dict(sorted(single_labels_dict.items()))
 
@@ -105,8 +114,11 @@ class PiecesDataset(Dataset):
         piece_type_labels = [PIECE_TYPE[item['piece_type']] for item in labels_dict.values()]
         piece_color_labels = [PIECE_COLOR[item['piece_color']] for item in labels_dict.values()]
 
-        one_hot_types = F.one_hot(torch.Tensor(piece_type_labels).to(torch.long)).to(torch.float64)
-        one_hot_colors = F.one_hot(torch.Tensor(piece_color_labels).to(torch.long)).to(torch.float64)
+        one_hot_types = F.one_hot(torch.Tensor(piece_type_labels).to(torch.long),
+                                  num_classes=len(PIECE_TYPE)).to(torch.float64)
+        one_hot_colors = F.one_hot(torch.Tensor(piece_color_labels).to(torch.long),
+                                   num_classes=len(PIECE_COLOR)).to(torch.float64)
+
         one_hot_colors = one_hot_colors[:, :-1]
 
         return one_hot_types, one_hot_colors

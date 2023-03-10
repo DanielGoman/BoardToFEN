@@ -31,6 +31,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     num_epochs = config.hyperparams.train.num_epochs
     print_interval = config.hyperparams.train.print_interval
     random_seed = config.hyperparams.train.random_seed
+    minibatch_size = config.hyperparams.train.minibatch_size
     model_path = config.paths.model_paths.model_path
 
     images_dir_path = config.paths.data_paths.image_dir_path
@@ -40,7 +41,8 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
     dataset = PiecesDataset(images_dir_path=images_dir_path,
                             labels_path=labels_path,
-                            transforms=transforms)
+                            transforms=transforms,
+                            minibatch_size=minibatch_size)
 
     train_size = int(train_size_ratio * len(dataset))
     test_size = len(dataset) - train_size

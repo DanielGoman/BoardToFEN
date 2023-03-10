@@ -7,3 +7,4 @@ train:
   num_epochs: 1
   print_interval: 50
   random_seed: 42
+  minibatch_size: 10
