@@ -1,10 +1,11 @@
 
 train:
   train_size: 0.8
-  lr: 0.001
+  lr: 1e-2
   batch_size: 4
   num_workers: 4
-  num_epochs: 1
+  num_epochs: 30
   print_interval: 50
   random_seed: 42
   minibatch_size: 10
+

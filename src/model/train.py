@@ -33,6 +33,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     random_seed = config.hyperparams.train.random_seed
     minibatch_size = config.hyperparams.train.minibatch_size
     model_path = config.paths.model_paths.model_path
+    current_run_path = hydra.core.hydra_config.HydraConfig.get()['runtime']['output_dir']
 
     images_dir_path = config.paths.data_paths.image_dir_path
     labels_path = config.paths.data_paths.labels_json_path
@@ -46,13 +47,17 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
     train_size = int(train_size_ratio * len(dataset))
     test_size = len(dataset) - train_size
-    train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size],
-                                                                generator=torch.Generator().manual_seed(random_seed))
+    if minibatch_size > 0:
+        train_dataset = dataset
+        test_loader = None
+    else:
+        train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size],
+                                                                    generator=torch.Generator().manual_seed(random_seed))
+        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
+                                                  shuffle=True, num_workers=num_workers)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
                                                shuffle=True, num_workers=num_workers)
-    test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-                                              shuffle=True, num_workers=num_workers)
 
     model = PieceClassifier(in_channels=config.model_params.in_channels,
                             hidden_dim=config.model_params.hidden_dim,
@@ -100,14 +105,15 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     print('Finished training\n')
     print(f'Saving model to {model_path}')
 
-    model_dir_path = os.path.dirname(model_path)
+    run_model_path = os.path.join(current_run_path, model_path)
+    model_dir_path = os.path.dirname(run_model_path)
     if not os.path.exists(model_dir_path):
         os.mkdir(model_dir_path)
 
     model_scripted = torch.jit.script(model)
-    model_scripted.save(model_path)
+    model_scripted.save(model_dir_path)
 
-    return model_path, train_loader, test_loader
+    return model_dir_path, train_loader, test_loader
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
@@ -118,7 +124,8 @@ def run_train_eval(config: DictConfig):
     model_.eval()
 
     eval_model(model_, train_loader_, state='train')
-    eval_model(model_, test_loader_, state='test')
+    if config.hyperparams.train.minibatch_size == -1:
+        eval_model(model_, test_loader_, state='test')
 
 
 if __name__ == "__main__":
