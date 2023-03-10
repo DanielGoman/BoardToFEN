@@ -156,6 +156,16 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
 
 def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float) -> torch.utils.data.DataLoader:
+    """Creates a DataLoader based on a subset of the dataset
+
+    Args:
+        dataset: the full dataset
+        subset_ratio: the percentage of data that should be sampled into the subset (without repetitions)
+
+    Returns:
+        subset_loader: DataLoader over the subset of the given dataset
+
+    """
     subset_size = int(subset_ratio * len(dataset))
     random_indices = np.random.choice(np.arange(len(dataset)), size=subset_size, replace=False)
     subset = torch.utils.data.Subset(dataset, random_indices)
@@ -166,9 +176,17 @@ def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float
 
 def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[str, List[float]],
                          epoch_val_accuracy: Dict[str, List[float]] = None):
+    """Plots train loss, train accuracy and validation accuracy over epoches
+
+    Args:
+        epoch_losses: average accumulated loss per epoch
+        epoch_train_accuracy: train accuracy per epoch (type and color separately)
+        epoch_val_accuracy: validation accuracy per epoch (type and color separately)
+
+    """
     num_epochs = len(epoch_losses)
 
-    plt.plot(np.arange(len(num_epochs)), epoch_losses)
+    plt.plot(np.arange(num_epochs), epoch_losses)
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('NLLLoss over epochs')
