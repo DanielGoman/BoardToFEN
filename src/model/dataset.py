@@ -34,7 +34,7 @@ class PiecesDataset(Dataset):
         if minibatch_size == -1 and num_images != num_labels:
             raise FileExistsError(f"Number of images ({num_images}) does not match number of labels ({num_labels})")
 
-        self.image_path_labels_pairs = self.create_imagepath_labels_pairs(images_dir_path, self.labels_dict)
+        self.image_path_labels_pairs = self.create_image_labels_pairs(images_dir_path, self.labels_dict)
 
     def load_labels(self, labels_path: str) -> Dict[str, Dict[str, str]]:
         """Loads all the labels from a json file into a dictionary
@@ -67,7 +67,7 @@ class PiecesDataset(Dataset):
 
         return single_labels_dict
 
-    def create_imagepath_labels_pairs(self, images_dir_path: str, labels_dict: Dict[str, Dict[str, str]]) \
+    def create_image_labels_pairs(self, images_dir_path: str, labels_dict: Dict[str, Dict[str, str]]) \
             -> List[Dict[str, Dict[str, torch.Tensor]]]:
         """Creates a list that for every image name contains path to the respective image and the labels
 
@@ -136,9 +136,9 @@ class PiecesDataset(Dataset):
             piece_color: one hot encoding of the piece color
 
         """
-        imagepath_labels_pair = self.image_path_labels_pairs[idx]
-        image = imagepath_labels_pair['image']
-        image_labels = imagepath_labels_pair['labels']
+        image_labels_pair = self.image_path_labels_pairs[idx]
+        image = image_labels_pair['image']
+        image_labels = image_labels_pair['labels']
 
         piece_type = image_labels['piece_type']
         piece_color = image_labels['piece_color']

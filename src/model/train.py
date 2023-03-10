@@ -1,4 +1,5 @@
 import os.path
+from typing import List, Dict
 
 import hydra
 import torch
@@ -14,6 +15,7 @@ from src.model.dataset import PiecesDataset
 from src.model.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 
 
+@hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
 def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.data.DataLoader):
     """A train script for the model over the chess pieces dataset
 
@@ -41,6 +43,8 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     images_dir_path = config.paths.data_paths.image_dir_path
     labels_path = config.paths.data_paths.labels_json_path
 
+    is_minibatch = minibatch_size > 0
+
     transforms = [hydra.utils.instantiate(transform, _convert_='partial') for transform in config.transforms.values()]
 
     dataset = PiecesDataset(images_dir_path=images_dir_path,
@@ -50,14 +54,23 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
     train_size = int(train_size_ratio * len(dataset))
     test_size = len(dataset) - train_size
-    if minibatch_size > 0:
+    if is_minibatch:
         train_dataset = dataset
+        eval_train_loader = get_subset_dataloader(dataset=dataset,
+                                                  subset_ratio=config.hyperparams.train.eval_train_size)
         test_loader = None
+        eval_val_loader = None
     else:
         train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size],
-                                                                    generator=torch.Generator().manual_seed(random_seed))
+                                                                    generator=torch.Generator().manual_seed(
+                                                                        random_seed))
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
                                                   shuffle=shuffle_data, num_workers=num_workers)
+
+        eval_train_loader = get_subset_dataloader(dataset=train_dataset,
+                                                  subset_ratio=config.hyperparams.train.eval_train_size)
+        eval_val_loader = get_subset_dataloader(dataset=test_dataset,
+                                                subset_ratio=config.hyperparams.train.eval_val_size)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
                                                shuffle=shuffle_data, num_workers=num_workers)
@@ -76,12 +89,14 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     print('Starting training')
-    model.train()
     epoch_losses = []
+    epoch_train_accuracy = {'type': [], 'color': []}
+    epoch_val_accuracy = {'type': [], 'color': []}
     for epoch in range(num_epochs):
         epoch_loss = 0.0
         interval_loss = 0.0
         count = 0
+        model.train()
         for iter_num, data in enumerate(train_loader):
             images, type_labels, color_labels, is_piece = data
 
@@ -107,14 +122,26 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
             count += batch_size
 
+        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, 'train',
+                                                                           verbose=False, eval_size=0.01)
+        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, 'val',
+                                                                       verbose=False, eval_size=0.05)
+
+        epoch_train_accuracy['type'].append(epoch_train_type_accuracy)
+        epoch_train_accuracy['color'].append(epoch_train_color_accuracy)
+        if not is_minibatch:
+            epoch_val_accuracy['type'].append(epoch_val_type_accuracy)
+            epoch_val_accuracy['color'].append(epoch_val_color_accuracy)
+
         epoch_loss = epoch_loss / train_size
         epoch_losses.append(epoch_loss)
         print(f'epoch {epoch} loss: {epoch_loss:.3f}\n')
 
-    plt.plot(np.arange(num_epochs), epoch_losses)
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.show()
+    if is_minibatch:
+        plot_learning_curves(epoch_losses, epoch_train_accuracy)
+    else:
+        plot_learning_curves(epoch_losses, epoch_train_accuracy, epoch_val_accuracy)
+
     print('Finished training\n')
     print(f'Saving model to {model_path}')
 
@@ -129,18 +156,61 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     return run_model_path, train_loader, test_loader
 
 
-@hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
-def run_train_eval(config: DictConfig):
-    model_path_, train_loader_, test_loader_ = train(config=config)
+def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float) -> torch.utils.data.DataLoader:
+    """Creates a DataLoader based on a subset of the dataset
 
-    model_ = torch.jit.load(model_path_)
-    model_.eval()
+    Args:
+        dataset: the full dataset
+        subset_ratio: the percentage of data that should be sampled into the subset (without repetitions)
 
-    eval_model(model_, train_loader_, state='train')
-    if config.hyperparams.train.minibatch_size == -1:
-        eval_model(model_, test_loader_, state='test')
+    Returns:
+        subset_loader: DataLoader over the subset of the given dataset
+
+    """
+    subset_size = int(subset_ratio * len(dataset))
+    random_indices = np.random.choice(np.arange(len(dataset)), size=subset_size, replace=False)
+    subset = torch.utils.data.Subset(dataset, random_indices)
+    subset_loader = torch.utils.data.DataLoader(subset, batch_size=subset_size)
+
+    return subset_loader
+
+
+def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[str, List[float]],
+                         epoch_val_accuracy: Dict[str, List[float]] = None):
+    """Plots train loss, train accuracy and validation accuracy over epochs
+
+    Args:
+        epoch_losses: average accumulated loss per epoch
+        epoch_train_accuracy: train accuracy per epoch (type and color separately)
+        epoch_val_accuracy: validation accuracy per epoch (type and color separately)
+
+    """
+    num_epochs = len(epoch_losses)
+
+    plt.plot(np.arange(num_epochs), epoch_losses)
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.title('NLLLoss over epochs')
+    plt.show()
+
+    plt.plot(np.arange(num_epochs), epoch_train_accuracy['type'], label='train')
+    if epoch_val_accuracy:
+        plt.plot(np.arange(num_epochs), epoch_val_accuracy['type'], label='val')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Balanced accuracy on piece types over epochs')
+    plt.legend()
+    plt.show()
+
+    plt.plot(np.arange(num_epochs), epoch_train_accuracy['color'], label='train')
+    if epoch_val_accuracy:
+        plt.plot(np.arange(num_epochs), epoch_val_accuracy['color'], label='val')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.title('Balanced accuracy on piece colors over epochs')
+    plt.legend()
+    plt.show()
 
 
 if __name__ == "__main__":
-    run_train_eval()
-
+    train()
