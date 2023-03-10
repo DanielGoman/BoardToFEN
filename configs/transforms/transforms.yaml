@@ -4,7 +4,7 @@ to_tensor:
 
 resize:
   _target_: torchvision.transforms.Resize
-  size: [64, 64]
+  size: [32, 32]
 
 normalize:
   _target_: torchvision.transforms.Normalize

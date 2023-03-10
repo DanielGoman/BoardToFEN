@@ -11,15 +11,15 @@ class PieceClassifier(nn.Module):
         self.conv_block1 = ConvBlock(in_channels=in_channels, out_channels=hidden_dim)
         self.conv_block2 = ConvBlock(in_channels=hidden_dim, out_channels=out_channels)
 
-        self.linear = nn.Linear(in_features=16 * 16 * 16, out_features=16 * 16)
+        self.linear = nn.Linear(in_features=16 * 8 * 8, out_features=8 * 8)
 
-        self.type_linear = nn.Linear(in_features=16 * 16, out_features=num_type_classes)
-        self.color_linear = nn.Linear(in_features=16 * 16, out_features=num_color_classes)
+        self.type_linear = nn.Linear(in_features=8 * 8, out_features=num_type_classes)
+        self.color_linear = nn.Linear(in_features=8 * 8, out_features=num_color_classes)
 
         self.relu = nn.ReLU()
 
-        self.type_softmax = nn.Softmax(dim=1)
-        self.color_softmax = nn.Softmax(dim=1)
+        self.type_softmax = nn.LogSoftmax(dim=1)
+        self.color_softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
         x = self.conv_block1(x)
@@ -41,7 +41,7 @@ class PieceClassifier(nn.Module):
 class ConvBlock(nn.Module):
     def __init__(self, in_channels: int, out_channels: int):
         super().__init__()
-        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=3, padding=1)
+        self.conv = nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=5, padding=2)
         self.bn = nn.BatchNorm2d(out_channels)
         self.relu = nn.ReLU()
         self.max_pool = nn.MaxPool2d(kernel_size=2, stride=2)

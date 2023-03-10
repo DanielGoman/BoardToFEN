@@ -3,8 +3,10 @@ import os.path
 import hydra
 import torch
 import torch.nn as nn
+import numpy as np
 
 from omegaconf import DictConfig
+from matplotlib import pyplot as plt
 
 from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
@@ -32,6 +34,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     print_interval = config.hyperparams.train.print_interval
     random_seed = config.hyperparams.train.random_seed
     minibatch_size = config.hyperparams.train.minibatch_size
+    shuffle_data = config.hyperparams.train.shuffle_data
     model_path = config.paths.model_paths.model_path
     current_run_path = hydra.core.hydra_config.HydraConfig.get()['runtime']['output_dir']
 
@@ -54,10 +57,10 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size],
                                                                     generator=torch.Generator().manual_seed(random_seed))
         test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-                                                  shuffle=True, num_workers=num_workers)
+                                                  shuffle=shuffle_data, num_workers=num_workers)
 
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
-                                               shuffle=True, num_workers=num_workers)
+                                               shuffle=shuffle_data, num_workers=num_workers)
 
     model = PieceClassifier(in_channels=config.model_params.in_channels,
                             hidden_dim=config.model_params.hidden_dim,
@@ -68,27 +71,29 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = model.to(device)
 
-    criterion = nn.CrossEntropyLoss()
+    type_criterion = nn.NLLLoss()
+    color_criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     print('Starting training')
     model.train()
+    epoch_losses = []
     for epoch in range(num_epochs):
         epoch_loss = 0.0
         interval_loss = 0.0
+        count = 0
         for iter_num, data in enumerate(train_loader):
-            image, type_label, color_label, is_piece = data
+            images, type_labels, color_labels, is_piece = data
 
             optimizer.zero_grad()
+            type_pred, color_pred = model(images.to(device))
+            images.detach().cpu()
 
-            type_pred, color_pred = model(image.to(device))
-            image.detach().cpu()
-
-            loss = criterion(type_pred, type_label.to(device))
+            loss = type_criterion(type_pred, type_labels.argmax(dim=1))
 
             is_piece_idx = is_piece.nonzero()
             if len(is_piece_idx) > 0:
-                loss += criterion(color_pred[is_piece_idx], color_label[is_piece_idx])
+                loss += color_criterion(color_pred[is_piece_idx], color_labels[is_piece_idx])
 
             loss.backward()
             optimizer.step()
@@ -96,12 +101,20 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             interval_loss += loss.item()
             epoch_loss += loss.item()
 
-            if iter_num % print_interval == 0:
+            if iter_num % print_interval == 0 and iter_num > 0:
                 print(f'epoch: {epoch}, iteration: {iter_num}, loss: {interval_loss / print_interval:.3f}')
                 interval_loss = 0.0
 
-        print(f'epoch {epoch} loss: {epoch_loss / train_size:.3f}\n')
+            count += batch_size
 
+        epoch_loss = epoch_loss / train_size
+        epoch_losses.append(epoch_loss)
+        print(f'epoch {epoch} loss: {epoch_loss:.3f}\n')
+
+    plt.plot(np.arange(num_epochs), epoch_losses)
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.show()
     print('Finished training\n')
     print(f'Saving model to {model_path}')
 
@@ -111,9 +124,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         os.mkdir(model_dir_path)
 
     model_scripted = torch.jit.script(model)
-    model_scripted.save(model_dir_path)
+    model_scripted.save(run_model_path)
 
-    return model_dir_path, train_loader, test_loader
+    return run_model_path, train_loader, test_loader
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')

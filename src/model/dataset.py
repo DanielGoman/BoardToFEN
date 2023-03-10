@@ -54,9 +54,6 @@ class PiecesDataset(Dataset):
             num_collected_squares = 0
             for board_type_dict in labels_dict.values():
                 for board in board_type_dict.values():
-                    # board_pieces = {'.'.join(items['image_file_name'].split('.')[:-1]):
-                    #                     {key: item for key, item in items.items() if key != 'image_file_name'}
-                    #                 for items in board.values()}
                     for i, items in enumerate(board.values()):
                         square_name = '.'.join(items['image_file_name'].split('.')[:-1])
                         square_labels = {key: item for key, item in items.items() if key != 'image_file_name'}
@@ -88,12 +85,13 @@ class PiecesDataset(Dataset):
         for idx, image_name in enumerate(labels_dict):
             full_image_name = f'{image_name}.{self.images_extension}'
             image_path = os.path.join(images_dir_path, full_image_name)
+            image = Image.open(image_path)
 
             one_hot_image_labels = {'piece_type': one_hot_piece_type[idx],
                                     'piece_color': one_hot_piece_color[idx],
                                     'is_piece': is_piece[idx]}
 
-            path_labels_pair = {'image_path': image_path,
+            path_labels_pair = {'image': image,
                                 'labels': one_hot_image_labels}
             path_labels_pairs_dict.append(path_labels_pair)
 
@@ -139,14 +137,13 @@ class PiecesDataset(Dataset):
 
         """
         imagepath_labels_pair = self.image_path_labels_pairs[idx]
-        image_path = imagepath_labels_pair['image_path']
+        image = imagepath_labels_pair['image']
         image_labels = imagepath_labels_pair['labels']
 
         piece_type = image_labels['piece_type']
         piece_color = image_labels['piece_color']
         is_piece = image_labels['is_piece']
 
-        image = Image.open(image_path)
         transformed_image = self.transforms(image)
 
         return transformed_image, piece_type, piece_color, is_piece
