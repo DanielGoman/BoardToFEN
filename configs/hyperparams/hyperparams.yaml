@@ -6,3 +6,4 @@ train:
   num_workers: 4
   num_epochs: 1
   print_interval: 50
+  random_seed: 42

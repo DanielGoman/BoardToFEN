@@ -31,7 +31,7 @@ def get_piece_labels(x: int, y: int, board_type: str) -> Tuple[int, int]:
                 piece_type = 'B'
             elif y == 4:
                 piece_type = 'Q'
-            elif piece_type == 5:
+            elif y == 5:
                 piece_type = 'K'
 
     elif board_type == str(DIRS_TO_PARSE_NAMES[1]):
@@ -41,9 +41,9 @@ def get_piece_labels(x: int, y: int, board_type: str) -> Tuple[int, int]:
         elif x == 8:
             piece_color = 'B'
 
-        if y == 3:
-            piece_type = 'K'
-        elif y == 4:
+        if y == 4:
             piece_type = 'Q'
+        elif y == 5:
+            piece_type = 'K'
 
     return piece_type, piece_color
