@@ -12,7 +12,6 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, verbose: 
         state: the type of dataset the model is run on (train or test)
 
     """
-    subset_size = int(len(loader) * eval_size)
     model.eval()
     with torch.no_grad():
         num_piece_classes = len(REVERSED_PIECE_TYPE)
@@ -43,8 +42,8 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, verbose: 
                 color_count_per_class = torch.bincount(color_label)
                 color_counts[color_count_per_class.nonzero()] += color_count_per_class[color_count_per_class.nonzero()]
 
-        type_accuracy = type_correct_hits / type_counts
-        color_accuracy = color_correct_hits / color_counts
+        type_accuracy = torch.nan_to_num(type_correct_hits / type_counts)
+        color_accuracy = torch.nan_to_num(color_correct_hits / color_counts)
 
         type_rates = type_counts / type_counts.sum()
         color_rates = color_counts / color_counts.sum()

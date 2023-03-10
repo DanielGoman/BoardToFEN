@@ -177,7 +177,7 @@ def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float
 
 def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[str, List[float]],
                          epoch_val_accuracy: Dict[str, List[float]] = None):
-    """Plots train loss, train accuracy and validation accuracy over epoches
+    """Plots train loss, train accuracy and validation accuracy over epochs
 
     Args:
         epoch_losses: average accumulated loss per epoch
@@ -193,20 +193,22 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[s
     plt.title('NLLLoss over epochs')
     plt.show()
 
-    plt.plot(np.arange(len(num_epochs)), epoch_train_accuracy['type'], label='train')
+    plt.plot(np.arange(num_epochs), epoch_train_accuracy['type'], label='train')
     if epoch_val_accuracy:
-        plt.plot(np.arange(len(num_epochs)), epoch_val_accuracy['type'], label='val')
+        plt.plot(np.arange(num_epochs), epoch_val_accuracy['type'], label='val')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.title('Balanced accuracy on piece types over epochs')
+    plt.legend()
     plt.show()
 
-    plt.plot(np.arange(len(num_epochs)), epoch_train_accuracy['color'], label='train')
+    plt.plot(np.arange(num_epochs), epoch_train_accuracy['color'], label='train')
     if epoch_val_accuracy:
-        plt.plot(np.arange(len(num_epochs)), epoch_val_accuracy['color'], label='val')
+        plt.plot(np.arange(num_epochs), epoch_val_accuracy['color'], label='val')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.title('Balanced accuracy on piece colors over epochs')
+    plt.legend()
     plt.show()
 
 
