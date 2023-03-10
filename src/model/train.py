@@ -72,7 +72,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     model = model.to(device)
 
     type_criterion = nn.NLLLoss()
-    color_criterion = nn.CrossEntropyLoss()
+    color_criterion = nn.NLLLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     print('Starting training')
@@ -93,7 +93,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
             is_piece_idx = is_piece.nonzero()
             if len(is_piece_idx) > 0:
-                loss += color_criterion(color_pred[is_piece_idx], color_labels[is_piece_idx])
+                loss += color_criterion(color_pred[is_piece_idx], color_labels[is_piece_idx].argmax(dim=1))
 
             loss.backward()
             optimizer.step()
