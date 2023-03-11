@@ -1,16 +1,18 @@
+import logging
+
 import torch
 
 from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
 
 
-def eval_model(model, loader: torch.utils.data.DataLoader, state: str, verbose: bool = True):
+def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logging.Logger = None):
     """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
 
     Args:
         model: trained model
         loader: data loader with a dataset to test the performance of the model over
         state: the type of dataset the model is run on (train or test)
-        verbose: prints metrics if True, silent otherwise
+        log: logger object, print and saves log into the logger if an object is passed, otherwise silent
 
     """
     model.eval()
@@ -51,16 +53,16 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, verbose: 
         balanced_type_accuracy = type_accuracy @ type_rates
         balanced_color_accuracy = color_accuracy @ color_rates
 
-        if verbose:
-            print(f'\nResults over the {state} set\n')
+        if log:
+            log.info(f'\nResults over the {state} set\n')
             for piece_type, piece_name in REVERSED_PIECE_TYPE.items():
-                print(f'Accuracy for {piece_name}: {type_accuracy[piece_type]:.3f}')
+                log.info(f'Accuracy for {piece_name}: {type_accuracy[piece_type]:.3f}')
 
             for piece_color, color_name in REVERSED_PIECE_COLOR.items():
-                print(f'Accuracy for {color_name}: {color_accuracy[piece_color]:.3f}')
+                log.info(f'Accuracy for {color_name}: {color_accuracy[piece_color]:.3f}')
 
-            print()
-            print(f'Balanced type accuracy: {balanced_type_accuracy.item():.3f}')
-            print(f'Balanced color accuracy: {balanced_color_accuracy.item():.3f}')
+            log.info()
+            log.info(f'Balanced type accuracy: {balanced_type_accuracy.item():.3f}')
+            log.info(f'Balanced color accuracy: {balanced_color_accuracy.item():.3f}')
 
         return balanced_type_accuracy, balanced_color_accuracy

@@ -1,5 +1,8 @@
 import os
+import sys
+import logging
 import hydra
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -35,8 +38,11 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     minibatch_size = config.hyperparams.train.minibatch_size
     shuffle_data = config.hyperparams.train.shuffle_data
     model_path = config.paths.model_paths.model_path
+    plots_dirname = config.paths.plot_paths.plot_dirname
 
     current_run_path = hydra.core.hydra_config.HydraConfig.get()['runtime']['output_dir']
+    plots_path = os.path.join(current_run_path, plots_dirname)
+    os.makedirs(plots_path, exist_ok=True)
     log = logging.getLogger(__name__)
 
     images_dir_path = config.paths.data_paths.image_dir_path
@@ -86,7 +92,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     color_criterion = nn.NLLLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    print('Starting training')
+    log.info('Starting training')
     epoch_losses = []
     epoch_train_accuracy = {'type': [], 'color': []}
     epoch_val_accuracy = {'type': [], 'color': []}
@@ -114,14 +120,12 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             epoch_loss += loss.item()
 
             if iter_num % print_interval == 0 and iter_num > 0:
-                print(f'epoch: {epoch}, iteration: {iter_num}, loss: '
-                      f'{interval_loss / (print_interval * batch_size):.3f}')
+                log.info(f'epoch: {epoch}, iteration: {iter_num}, loss: '
+                            f'{interval_loss / (print_interval * batch_size):.3f}')
                 interval_loss = 0.0
 
-        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train',
-                                                                           verbose=False)
-        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, state='val',
-                                                                       verbose=False)
+        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train')
+        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, state='val')
 
         epoch_train_accuracy['type'].append(epoch_train_type_accuracy)
         epoch_train_accuracy['color'].append(epoch_train_color_accuracy)
@@ -131,16 +135,16 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
         epoch_loss = epoch_loss / train_size
         epoch_losses.append(epoch_loss)
-        print(f'epoch {epoch} loss: {epoch_loss:.3f}\n')
+        log.info(f'epoch {epoch} loss: {epoch_loss:.3f}\n')
 
     if is_minibatch:
-        plot_learning_curves(epoch_losses, epoch_train_accuracy)
+        plot_learning_curves(epoch_losses, epoch_train_accuracy, plots_path)
     else:
-        plot_learning_curves(epoch_losses, epoch_train_accuracy, epoch_val_accuracy)
+        plot_learning_curves(epoch_losses, epoch_train_accuracy, epoch_val_accuracy, plots_path)
 
-    print('Finished training\n')
+    log.info('Finished training\n')
 
-    print(f'Saving model to {model_path}')
+    log.info(f'Saving model to {model_path}')
     run_model_path = os.path.join(current_run_path, model_path)
     model_dir_path = os.path.dirname(run_model_path)
     if not os.path.exists(model_dir_path):
@@ -150,7 +154,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     model_scripted.save(run_model_path)
 
     if not is_minibatch:
-        eval_model(model=model, loader=val_loader, state='val', verbose=True)
+        eval_model(model=model, loader=val_loader, state='val', log=log)
 
 
 def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float) -> torch.utils.data.DataLoader:
@@ -173,7 +177,7 @@ def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float
 
 
 def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[str, List[float]],
-                         epoch_val_accuracy: Dict[str, List[float]] = None):
+                         epoch_val_accuracy: Dict[str, List[float]] = None, plots_path: str = ''):
     """Plots train loss, train accuracy and validation accuracy over epochs
 
     Args:
@@ -188,6 +192,7 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[s
     plt.xlabel('Epochs')
     plt.ylabel('Loss')
     plt.title('NLLLoss over epochs')
+    plt.savefig(os.path.join(plots_path, 'loss.png'))
     plt.show()
 
     plt.plot(np.arange(num_epochs), epoch_train_accuracy['type'], label='train')
@@ -197,6 +202,7 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[s
     plt.ylabel('Accuracy')
     plt.title('Balanced accuracy on piece types over epochs')
     plt.legend()
+    plt.savefig(os.path.join(plots_path, 'train_accuracy.png'))
     plt.show()
 
     plt.plot(np.arange(num_epochs), epoch_train_accuracy['color'], label='train')
@@ -206,6 +212,7 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[s
     plt.ylabel('Accuracy')
     plt.title('Balanced accuracy on piece colors over epochs')
     plt.legend()
+    plt.savefig(os.path.join(plots_path, 'val_accuracy.png'))
     plt.show()
 
 
