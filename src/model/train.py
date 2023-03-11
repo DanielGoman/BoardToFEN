@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
 from src.model.dataset import PiecesDataset
-from src.model.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
+from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
@@ -28,50 +28,47 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         test_loader: test loader with test data
 
     """
-    train_size_ratio = config.hyperparams.train.train_size
     batch_size = config.hyperparams.train.batch_size
     num_workers = config.hyperparams.train.num_workers
     lr = config.hyperparams.train.lr
     num_epochs = config.hyperparams.train.num_epochs
     print_interval = config.hyperparams.train.print_interval
-    random_seed = config.hyperparams.train.random_seed
     minibatch_size = config.hyperparams.train.minibatch_size
     shuffle_data = config.hyperparams.train.shuffle_data
     model_path = config.paths.model_paths.model_path
     current_run_path = hydra.core.hydra_config.HydraConfig.get()['runtime']['output_dir']
 
     images_dir_path = config.paths.data_paths.image_dir_path
-    labels_path = config.paths.data_paths.labels_json_path
+    train_labels_path = config.paths.data_paths.train_json_path
+    vel_labels_path = config.paths.data_paths.val_json_path
 
     is_minibatch = minibatch_size > 0
 
     transforms = [hydra.utils.instantiate(transform, _convert_='partial') for transform in config.transforms.values()]
 
-    dataset = PiecesDataset(images_dir_path=images_dir_path,
-                            labels_path=labels_path,
-                            transforms=transforms,
-                            minibatch_size=minibatch_size)
+    train_dataset = PiecesDataset(images_dir_path=images_dir_path,
+                                  labels_path=train_labels_path,
+                                  transforms=transforms)
+    val_dataset = PiecesDataset(images_dir_path=images_dir_path,
+                                labels_path=vel_labels_path,
+                                transforms=transforms)
 
-    train_size = int(train_size_ratio * len(dataset))
-    test_size = len(dataset) - train_size
     if is_minibatch:
-        train_dataset = dataset
-        eval_train_loader = get_subset_dataloader(dataset=dataset,
+        train_dataset = torch.utils.data.ConcatDataset([train_dataset, val_dataset])
+        eval_train_loader = get_subset_dataloader(dataset=train_dataset,
                                                   subset_ratio=config.hyperparams.train.eval_train_size)
-        test_loader = None
+        val_loader = None
         eval_val_loader = None
     else:
-        train_dataset, test_dataset = torch.utils.data.random_split(dataset, [train_size, test_size],
-                                                                    generator=torch.Generator().manual_seed(
-                                                                        random_seed))
-        test_loader = torch.utils.data.DataLoader(test_dataset, batch_size=batch_size,
-                                                  shuffle=shuffle_data, num_workers=num_workers)
+        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
+                                                 shuffle=shuffle_data, num_workers=num_workers)
 
         eval_train_loader = get_subset_dataloader(dataset=train_dataset,
                                                   subset_ratio=config.hyperparams.train.eval_train_size)
-        eval_val_loader = get_subset_dataloader(dataset=test_dataset,
+        eval_val_loader = get_subset_dataloader(dataset=val_dataset,
                                                 subset_ratio=config.hyperparams.train.eval_val_size)
 
+    train_size = len(train_dataset) * batch_size
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
                                                shuffle=shuffle_data, num_workers=num_workers)
 
@@ -117,15 +114,16 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             epoch_loss += loss.item()
 
             if iter_num % print_interval == 0 and iter_num > 0:
-                print(f'epoch: {epoch}, iteration: {iter_num}, loss: {interval_loss / print_interval:.3f}')
+                print(f'epoch: {epoch}, iteration: {iter_num}, loss: '
+                      f'{interval_loss / (print_interval * batch_size):.3f}')
                 interval_loss = 0.0
 
             count += batch_size
 
-        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, 'train',
-                                                                           verbose=False, eval_size=0.01)
-        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, 'val',
-                                                                       verbose=False, eval_size=0.05)
+        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train',
+                                                                           verbose=False)
+        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, state='val',
+                                                                       verbose=False)
 
         epoch_train_accuracy['type'].append(epoch_train_type_accuracy)
         epoch_train_accuracy['color'].append(epoch_train_color_accuracy)
@@ -143,8 +141,8 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         plot_learning_curves(epoch_losses, epoch_train_accuracy, epoch_val_accuracy)
 
     print('Finished training\n')
-    print(f'Saving model to {model_path}')
 
+    print(f'Saving model to {model_path}')
     run_model_path = os.path.join(current_run_path, model_path)
     model_dir_path = os.path.dirname(run_model_path)
     if not os.path.exists(model_dir_path):
@@ -153,7 +151,8 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     model_scripted = torch.jit.script(model)
     model_scripted.save(run_model_path)
 
-    return run_model_path, train_loader, test_loader
+    if not is_minibatch:
+        eval_model(model=model, loader=val_loader, state='val', verbose=True)
 
 
 def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float) -> torch.utils.data.DataLoader:

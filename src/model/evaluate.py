@@ -1,15 +1,16 @@
 import torch
 
-from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR, NON_PIECE, PIECE_COLOR
+from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
 
 
-def eval_model(model, loader: torch.utils.data.DataLoader, state: str, verbose: bool = True, eval_size: float = 1.0):
+def eval_model(model, loader: torch.utils.data.DataLoader, state: str, verbose: bool = True):
     """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
 
     Args:
         model: trained model
         loader: data loader with a dataset to test the performance of the model over
         state: the type of dataset the model is run on (train or test)
+        verbose: prints metrics if True, silent otherwise
 
     """
     model.eval()
