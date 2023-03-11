@@ -124,6 +124,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
                             f'{interval_loss / (print_interval * batch_size):.3f}')
                 interval_loss = 0.0
 
+            if 0 < minibatch_size == iter_num:
+                break
+
         epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train')
         epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, state='val')
 
@@ -184,6 +187,7 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[s
         epoch_losses: average accumulated loss per epoch
         epoch_train_accuracy: train accuracy per epoch (type and color separately)
         epoch_val_accuracy: validation accuracy per epoch (type and color separately)
+        plots_path: path to the directory in which the plots will be saved
 
     """
     num_epochs = len(epoch_losses)

@@ -61,7 +61,7 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logg
             for piece_color, color_name in REVERSED_PIECE_COLOR.items():
                 log.info(f'Accuracy for {color_name}: {color_accuracy[piece_color]:.3f}')
 
-            log.info()
+            log.info('')
             log.info(f'Balanced type accuracy: {balanced_type_accuracy.item():.3f}')
             log.info(f'Balanced color accuracy: {balanced_color_accuracy.item():.3f}')
 
