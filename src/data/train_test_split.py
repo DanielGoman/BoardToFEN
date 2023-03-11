@@ -1,5 +1,5 @@
 import json
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 import hydra
 import numpy as np

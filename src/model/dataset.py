@@ -1,6 +1,5 @@
 import json
 import os
-import yaml
 
 import hydra
 import torch
@@ -30,7 +29,8 @@ class PiecesDataset(Dataset):
 
         self.image_path_labels_pairs = self.create_image_labels_pairs(images_dir_path, self.labels_dict)
 
-    def load_labels(self, labels_path: str) -> Dict[str, Dict[str, str]]:
+    @staticmethod
+    def load_labels(labels_path: str) -> Dict[str, Dict[str, str]]:
         """Loads all the labels from a json file into a dictionary
 
         Args:

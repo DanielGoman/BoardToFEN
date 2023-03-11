@@ -1,6 +1,6 @@
 import torch
 
-from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR, NON_PIECE, PIECE_COLOR
+from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
 
 
 def eval_model(model, loader: torch.utils.data.DataLoader, state: str, verbose: bool = True):
