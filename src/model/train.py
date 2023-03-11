@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
 from src.model.dataset import PiecesDataset
-from src.model.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
+from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
