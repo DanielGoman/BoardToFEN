@@ -18,21 +18,15 @@ from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR, NON_PIECE
 
 class PiecesDataset(Dataset):
     def __init__(self, images_dir_path: str, labels_path, transforms: list = None, dtype='float32',
-                 images_extension: str = 'png', device: str = 'cpu', minibatch_size: int = None):
+                 images_extension: str = 'png', device: str = 'cpu'):
         self.dtype = dtype
         self.images_extension = images_extension
         self.device = device
-        self.minibatch_size = minibatch_size
 
         if transforms:
             self.transforms = torchvision.transforms.Compose(transforms)
 
         self.labels_dict = self.load_labels(labels_path)
-
-        num_images = len(os.listdir(images_dir_path))
-        num_labels = len(self.labels_dict)
-        if minibatch_size == -1 and num_images != num_labels:
-            raise FileExistsError(f"Number of images ({num_images}) does not match number of labels ({num_labels})")
 
         self.image_path_labels_pairs = self.create_image_labels_pairs(images_dir_path, self.labels_dict)
 
@@ -60,8 +54,6 @@ class PiecesDataset(Dataset):
                         single_labels_dict[square_name] = square_labels
 
                         num_collected_squares += 1
-                        if num_collected_squares == self.minibatch_size:
-                            return dict(sorted(single_labels_dict.items()))
 
             single_labels_dict = dict(sorted(single_labels_dict.items()))
 

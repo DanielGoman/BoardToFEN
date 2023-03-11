@@ -7,7 +7,6 @@ train:
   num_epochs: 10
   print_interval: 50
   shuffle_data: False
-  random_seed: 42
   minibatch_size: -1
   eval_train_size: 0.01
   eval_val_size: 0.04

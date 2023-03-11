@@ -42,7 +42,6 @@ def train_test_split(config: DictConfig):
                                             out_json_path=VAL_LABELS_OUTPUT_FILE_PATH)
 
 
-# TODO: load train and val separately
 def create_subset_from_selected_indices(dataset: List[Tuple[str, dict]], selected_idx: np.ndarray,
                                         board_types_names: List[str], out_json_path: str):
     """Creates a subset of the given dataset and saves it into a json file
