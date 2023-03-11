@@ -1,11 +1,10 @@
-import os.path
-from typing import List, Dict
-
+import os
 import hydra
 import torch
 import torch.nn as nn
 import numpy as np
 
+from typing import List, Dict
 from omegaconf import DictConfig
 from matplotlib import pyplot as plt
 
@@ -36,7 +35,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     minibatch_size = config.hyperparams.train.minibatch_size
     shuffle_data = config.hyperparams.train.shuffle_data
     model_path = config.paths.model_paths.model_path
+
     current_run_path = hydra.core.hydra_config.HydraConfig.get()['runtime']['output_dir']
+    log = logging.getLogger(__name__)
 
     images_dir_path = config.paths.data_paths.image_dir_path
     train_labels_path = config.paths.data_paths.train_json_path
@@ -92,7 +93,6 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     for epoch in range(num_epochs):
         epoch_loss = 0.0
         interval_loss = 0.0
-        count = 0
         model.train()
         for iter_num, data in enumerate(train_loader):
             images, type_labels, color_labels, is_piece = data
@@ -117,8 +117,6 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
                 print(f'epoch: {epoch}, iteration: {iter_num}, loss: '
                       f'{interval_loss / (print_interval * batch_size):.3f}')
                 interval_loss = 0.0
-
-            count += batch_size
 
         epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train',
                                                                            verbose=False)
