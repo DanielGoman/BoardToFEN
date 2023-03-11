@@ -13,6 +13,12 @@ from src.data.consts.path_consts import LABELS_OUTPUT_FILE_PATH, TRAIN_LABELS_OU
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
 def train_test_split(config: DictConfig):
+    """Split the entire dataset into a train set and validation set according to desired train size (config param)
+
+    Args:
+        config: hydra config manager
+
+    """
     train_size_ratio = config.hyperparams.train.train_size
     with open(LABELS_OUTPUT_FILE_PATH) as file:
         labels = json.load(file)
@@ -36,6 +42,7 @@ def train_test_split(config: DictConfig):
                                             out_json_path=VAL_LABELS_OUTPUT_FILE_PATH)
 
 
+# TODO: load train and val separately
 def create_subset_from_selected_indices(dataset: List[Tuple[str, dict]], selected_idx: np.ndarray,
                                         board_types_names: List[str], out_json_path: str):
     """Creates a subset of the given dataset and saves it into a json file
@@ -46,12 +53,10 @@ def create_subset_from_selected_indices(dataset: List[Tuple[str, dict]], selecte
         4 - dict with all the information of a specific square
 
     Args:
-        dataset:
-        selected_idx:
-        board_types_names:
-
-    Returns:
-
+        dataset: the entire dataset, laid out as a list of squares (of all board of all board types)
+        selected_idx: the indices in the dataset selected to be in the subset
+        board_types_names: names fo all board types in the data
+        out_json_path: path to the output json which will contain the new subset
 
     """
     subset = {board_type_name: {} for board_type_name in board_types_names}
