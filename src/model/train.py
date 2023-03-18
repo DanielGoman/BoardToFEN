@@ -1,5 +1,4 @@
 import os
-import sys
 import logging
 import hydra
 
@@ -10,6 +9,7 @@ import numpy as np
 from typing import List, Dict
 from omegaconf import DictConfig
 from matplotlib import pyplot as plt
+from torch.utils.tensorboard import SummaryWriter
 
 from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
@@ -44,6 +44,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     plots_path = os.path.join(current_run_path, plots_dirname)
     os.makedirs(plots_path, exist_ok=True)
     log = logging.getLogger(__name__)
+    tb_writer = SummaryWriter()
 
     images_dir_path = config.paths.data_paths.image_dir_path
     train_labels_path = config.paths.data_paths.train_json_path
@@ -121,14 +122,16 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
             if iter_num % print_interval == 0 and iter_num > 0:
                 log.info(f'epoch: {epoch}, iteration: {iter_num}, loss: '
-                            f'{interval_loss / (print_interval * batch_size):.3f}')
+                         f'{interval_loss / (print_interval * batch_size):.3f}')
                 interval_loss = 0.0
 
             if 0 < minibatch_size == iter_num:
                 break
 
-        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train')
-        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, state='val')
+        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train',
+                                                                           epoch_num=epoch, tb_writer=tb_writer)
+        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, state='val',
+                                                                       epoch_num=epoch, tb_writer=tb_writer)
 
         epoch_train_accuracy['type'].append(epoch_train_type_accuracy)
         epoch_train_accuracy['color'].append(epoch_train_color_accuracy)
@@ -138,7 +141,11 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
         epoch_loss = epoch_loss / train_size
         epoch_losses.append(epoch_loss)
+
         log.info(f'epoch {epoch} loss: {epoch_loss:.3f}\n')
+
+        tb_writer.add_scalar('Epoch Loss', epoch_loss, epoch)
+        tb_writer.flush()
 
     if is_minibatch:
         plot_learning_curves(epoch_losses, epoch_train_accuracy, plots_path)
@@ -158,6 +165,8 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
     if not is_minibatch:
         eval_model(model=model, loader=val_loader, state='val', log=log)
+
+    tb_writer.close()
 
 
 def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float) -> torch.utils.data.DataLoader:

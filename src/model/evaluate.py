@@ -1,11 +1,13 @@
 import logging
 
 import torch
+from torch.utils.tensorboard import SummaryWriter
 
 from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
 
 
-def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logging.Logger = None):
+def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logging.Logger = None,
+               epoch_num: int = None, tb_writer: SummaryWriter = None):
     """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
 
     Args:
@@ -13,6 +15,8 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logg
         loader: data loader with a dataset to test the performance of the model over
         state: the type of dataset the model is run on (train or test)
         log: logger object, print and saves log into the logger if an object is passed, otherwise silent
+        epoch_num: number of the current epoch
+        tb_writer: TensorBoard writer object, used to log results per epoch
 
     """
     model.eval()
@@ -64,5 +68,10 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logg
             log.info('')
             log.info(f'Balanced type accuracy: {balanced_type_accuracy.item():.3f}')
             log.info(f'Balanced color accuracy: {balanced_color_accuracy.item():.3f}')
+
+        if tb_writer:
+            tb_writer.add_scalar('Balanced type accuracy on train', balanced_type_accuracy.item(), epoch_num)
+            tb_writer.add_scalar('Balanced color accuracy on train', balanced_color_accuracy.item(), epoch_num)
+            tb_writer.flush()
 
         return balanced_type_accuracy, balanced_color_accuracy
