@@ -1,49 +1,45 @@
-from typing import Tuple
+
 
 from consts.path_consts import DIRS_TO_PARSE_NAMES
 
 
-def get_piece_labels(x: int, y: int, board_type: str) -> Tuple[int, int]:
-    piece_type = 'X'
-    piece_color = 'X'
+def get_piece_labels(x: int, y: int, board_type: str) -> str:
+    label = None
 
     if x not in [1, 2, 7, 8]:
-        piece_type = 'X'
+        return 'X'
 
     elif board_type == str(DIRS_TO_PARSE_NAMES[0]):
         if x == 2:
-            piece_type = 'P'
-            piece_color = 'W'
+            return 'WP'
         elif x == 7:
-            piece_type = 'P'
-            piece_color = 'B'
+            return 'BP'
         else:
             if x == 1:
-                piece_color = 'W'
+                label = 'W'
             elif x == 8:
-                piece_color = 'B'
+                label = 'B'
 
             if y == 1 or y == 8:
-                piece_type = 'R'
+                label += 'R'
             elif y == 2 or y == 7:
-                piece_type = 'N'
+                label += 'N'
             elif y == 3 or y == 6:
-                piece_type = 'B'
+                label += 'B'
             elif y == 4:
-                piece_type = 'Q'
+                label += 'Q'
             elif y == 5:
-                piece_type = 'K'
+                label += 'K'
 
     elif board_type == str(DIRS_TO_PARSE_NAMES[1]):
-
         if x == 1:
-            piece_color = 'W'
+            label = 'W'
         elif x == 8:
-            piece_color = 'B'
+            label = 'B'
 
         if y == 4:
-            piece_type = 'Q'
+            label += 'K'
         elif y == 5:
-            piece_type = 'K'
+            label += 'Q'
 
-    return piece_type, piece_color
+    return label

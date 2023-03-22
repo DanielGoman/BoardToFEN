@@ -65,9 +65,9 @@ def label_squares(squares_dict: Dict[Tuple[int, int], np.ndarray], board_type: s
         -> Dict[Tuple[int, int], Dict[str, Any]]:
     labeled_squares_dict = {}
     for (i, j), square in squares_dict.items():
-        square_labels = get_piece_labels(i, j, board_type)
+        square_label = get_piece_labels(i, j, board_type)
         labeled_squares_dict[(i, j)] = {'square': square,
-                                        'labels': square_labels}
+                                        'label': square_label}
 
     return labeled_squares_dict
 
@@ -81,8 +81,7 @@ def save_squares(labeled_squares_dict: Dict[Tuple[int, int], np.ndarray], data_d
         print(f'Writing {str(out_file_name)}')
         cv2.imwrite(str(out_file_path), square_data['square'])
 
-        labels_dict[str((i, j))] = {'piece_type': square_data['labels'][0],
-                                    'piece_color': square_data['labels'][1],
+        labels_dict[str((i, j))] = {'label': square_data['label'],
                                     'image_file_name': out_file_name}
 
     return labels_dict

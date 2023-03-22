@@ -83,36 +83,30 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     model = PieceClassifier(in_channels=config.model_params.in_channels,
                             hidden_dim=config.model_params.hidden_dim,
                             out_channels=config.model_params.out_channels,
-                            num_type_classes=config.model_params.num_type_classes,
-                            num_color_classes=config.model_params.num_color_classes)
+                            num_classes=config.model_params.num_classes)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     model = model.to(device)
 
-    type_criterion = nn.NLLLoss()
-    color_criterion = nn.NLLLoss()
+    criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     log.info('Starting training')
     epoch_losses = []
-    epoch_train_accuracy = {'type': [], 'color': []}
-    epoch_val_accuracy = {'type': [], 'color': []}
+    epoch_train_accuracies = []
+    epoch_val_accuracies = []
     for epoch in range(num_epochs):
         epoch_loss = 0.0
         interval_loss = 0.0
         model.train()
         for iter_num, data in enumerate(train_loader):
-            images, type_labels, color_labels, is_piece = data
+            images, label = data
 
             optimizer.zero_grad()
-            type_pred, color_pred = model(images.to(device))
+            class_pred = model(images.to(device))
             images.detach().cpu()
 
-            loss = type_criterion(type_pred, type_labels.argmax(dim=1))
-
-            is_piece_idx = is_piece.nonzero()
-            if len(is_piece_idx) > 0:
-                loss += color_criterion(color_pred[is_piece_idx], color_labels[is_piece_idx].argmax(dim=1))
+            loss = criterion(class_pred, label)
 
             loss.backward()
             optimizer.step()
@@ -128,16 +122,14 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             if 0 < minibatch_size == iter_num:
                 break
 
-        epoch_train_type_accuracy, epoch_train_color_accuracy = eval_model(model, eval_train_loader, state='train',
-                                                                           epoch_num=epoch, tb_writer=tb_writer)
-        epoch_val_type_accuracy, epoch_val_color_accuracy = eval_model(model, eval_val_loader, state='val',
-                                                                       epoch_num=epoch, tb_writer=tb_writer)
+        epoch_train_accuracy = eval_model(model, eval_train_loader, state='train',
+                                          epoch_num=epoch, tb_writer=tb_writer)
+        epoch_val_accuracy = eval_model(model, eval_val_loader, state='val',
+                                             epoch_num=epoch, tb_writer=tb_writer)
 
-        epoch_train_accuracy['type'].append(epoch_train_type_accuracy)
-        epoch_train_accuracy['color'].append(epoch_train_color_accuracy)
+        epoch_train_accuracies.append(epoch_train_accuracy)
         if not is_minibatch:
-            epoch_val_accuracy['type'].append(epoch_val_type_accuracy)
-            epoch_val_accuracy['color'].append(epoch_val_color_accuracy)
+            epoch_val_accuracies.append(epoch_val_accuracy)
 
         epoch_loss = epoch_loss / train_size
         epoch_losses.append(epoch_loss)
@@ -148,9 +140,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         tb_writer.flush()
 
     if is_minibatch:
-        plot_learning_curves(epoch_losses, epoch_train_accuracy, plots_path)
+        plot_learning_curves(epoch_losses, epoch_train_accuracies, plots_path)
     else:
-        plot_learning_curves(epoch_losses, epoch_train_accuracy, epoch_val_accuracy, plots_path)
+        plot_learning_curves(epoch_losses, epoch_train_accuracies, epoch_val_accuracies, plots_path)
 
     log.info('Finished training\n')
 
@@ -188,14 +180,14 @@ def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float
     return subset_loader
 
 
-def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[str, List[float]],
-                         epoch_val_accuracy: Dict[str, List[float]] = None, plots_path: str = ''):
+def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracies: Dict[str, List[float]],
+                         epoch_val_accuracies: Dict[str, List[float]] = None, plots_path: str = ''):
     """Plots train loss, train accuracy and validation accuracy over epochs
 
     Args:
         epoch_losses: average accumulated loss per epoch
-        epoch_train_accuracy: train accuracy per epoch (type and color separately)
-        epoch_val_accuracy: validation accuracy per epoch (type and color separately)
+        epoch_train_accuracies: train accuracy per epoch (type and color separately)
+        epoch_val_accuracies: validation accuracy per epoch (type and color separately)
         plots_path: path to the directory in which the plots will be saved
 
     """
@@ -208,24 +200,14 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracy: Dict[s
     plt.savefig(os.path.join(plots_path, 'loss.png'))
     plt.show()
 
-    plt.plot(np.arange(num_epochs), epoch_train_accuracy['type'], label='train')
-    if epoch_val_accuracy:
-        plt.plot(np.arange(num_epochs), epoch_val_accuracy['type'], label='val')
+    plt.plot(np.arange(num_epochs), epoch_train_accuracies, label='train')
+    if epoch_val_accuracies:
+        plt.plot(np.arange(num_epochs), epoch_val_accuracies, label='val')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.title('Balanced accuracy on piece types over epochs')
     plt.legend()
     plt.savefig(os.path.join(plots_path, 'train_accuracy.png'))
-    plt.show()
-
-    plt.plot(np.arange(num_epochs), epoch_train_accuracy['color'], label='train')
-    if epoch_val_accuracy:
-        plt.plot(np.arange(num_epochs), epoch_val_accuracy['color'], label='val')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Balanced accuracy on piece colors over epochs')
-    plt.legend()
-    plt.savefig(os.path.join(plots_path, 'val_accuracy.png'))
     plt.show()
 
 

@@ -12,7 +12,7 @@ from PIL import Image
 from torch.utils.data import Dataset
 from typing import Dict, List
 
-from src.data.consts.piece_consts import PIECE_TYPE, PIECE_COLOR, NON_PIECE
+from src.data.consts.piece_consts import LABELS
 
 
 class PiecesDataset(Dataset):
@@ -50,8 +50,8 @@ class PiecesDataset(Dataset):
                 for board in board_type_dict.values():
                     for i, items in enumerate(board.values()):
                         square_name = '.'.join(items['image_file_name'].split('.')[:-1])
-                        square_labels = {key: item for key, item in items.items() if key != 'image_file_name'}
-                        single_labels_dict[square_name] = square_labels
+                        label = items['label']
+                        single_labels_dict[square_name] = label
 
                         num_collected_squares += 1
 
@@ -71,23 +71,18 @@ class PiecesDataset(Dataset):
             path_labels_pairs_dict: list of pairs of (image_path, image_labels) for every image name
 
         """
-        one_hot_piece_type, one_hot_piece_color = self.transform_labels(labels_dict)
-        is_piece = torch.Tensor([int(piece_info['piece_type'] != NON_PIECE) for piece_info in labels_dict.values()])
-        path_labels_pairs_dict = []
+        one_hot_labels = self.transform_labels(labels_dict)
+        image_label_pairs_dict = []
         for idx, image_name in enumerate(labels_dict):
             full_image_name = f'{image_name}.{self.images_extension}'
             image_path = os.path.join(images_dir_path, full_image_name)
             image = Image.open(image_path)
 
-            one_hot_image_labels = {'piece_type': one_hot_piece_type[idx],
-                                    'piece_color': one_hot_piece_color[idx],
-                                    'is_piece': is_piece[idx]}
+            path_label_pair = {'image': image,
+                                'label': one_hot_labels[idx]}
+            image_label_pairs_dict.append(path_label_pair)
 
-            path_labels_pair = {'image': image,
-                                'labels': one_hot_image_labels}
-            path_labels_pairs_dict.append(path_labels_pair)
-
-        return path_labels_pairs_dict
+        return image_label_pairs_dict
 
     @staticmethod
     def transform_labels(labels_dict: Dict[str, Dict[str, str]]) -> (torch.Tensor, torch.Tensor):
@@ -101,17 +96,12 @@ class PiecesDataset(Dataset):
             one_hot_colors: a tensor of one hot encodings of the piece colors
 
         """
-        piece_type_labels = [PIECE_TYPE[item['piece_type']] for item in labels_dict.values()]
-        piece_color_labels = [PIECE_COLOR[item['piece_color']] for item in labels_dict.values()]
+        labels = [LABELS[square_class] for square_class in labels_dict.values()]
 
-        one_hot_types = F.one_hot(torch.Tensor(piece_type_labels).to(torch.long),
-                                  num_classes=len(PIECE_TYPE)).to(torch.float64)
-        one_hot_colors = F.one_hot(torch.Tensor(piece_color_labels).to(torch.long),
-                                   num_classes=len(PIECE_COLOR)).to(torch.float64)
+        one_hot_label = F.one_hot(torch.Tensor(labels).to(torch.long),
+                                  num_classes=len(LABELS)).to(torch.float64)
 
-        one_hot_colors = one_hot_colors[:, :-1]
-
-        return one_hot_types, one_hot_colors
+        return one_hot_label
 
     def __len__(self):
         return len(self.image_path_labels_pairs)
@@ -128,17 +118,13 @@ class PiecesDataset(Dataset):
             piece_color: one hot encoding of the piece color
 
         """
-        image_labels_pair = self.image_path_labels_pairs[idx]
-        image = image_labels_pair['image']
-        image_labels = image_labels_pair['labels']
-
-        piece_type = image_labels['piece_type']
-        piece_color = image_labels['piece_color']
-        is_piece = image_labels['is_piece']
+        image_label_pair = self.image_path_labels_pairs[idx]
+        image = image_label_pair['image']
+        image_label = image_label_pair['label']
 
         transformed_image = self.transforms(image)
 
-        return transformed_image, piece_type, piece_color, is_piece
+        return transformed_image, image_label
 
 
 @hydra.main(config_path=r'../../configs/', config_name=r'train.yaml', version_base='1.2')
