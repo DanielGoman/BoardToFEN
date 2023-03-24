@@ -101,15 +101,18 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         model.train()
         for iter_num, data in enumerate(train_loader):
             images, label = data
+            images, label = images.to(device), label.to(device)
 
-            optimizer.zero_grad()
-            class_pred = model(images.to(device))
-            images.detach().cpu()
+            class_pred = model(images)
 
             loss = criterion(class_pred, label)
 
             loss.backward()
             optimizer.step()
+            optimizer.zero_grad()
+
+            label.detach().cpu()
+            images.detach().cpu()
 
             interval_loss += loss.item()
             epoch_loss += loss.item()
@@ -122,9 +125,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             if 0 < minibatch_size == iter_num:
                 break
 
-        epoch_train_accuracy = eval_model(model, eval_train_loader, state='train',
+        epoch_train_accuracy = eval_model(model, eval_train_loader, device=device, state='train',
                                           epoch_num=epoch, tb_writer=tb_writer)
-        epoch_val_accuracy = eval_model(model, eval_val_loader, state='val',
+        epoch_val_accuracy = eval_model(model, eval_val_loader, device=device, state='val',
                                              epoch_num=epoch, tb_writer=tb_writer)
 
         epoch_train_accuracies.append(epoch_train_accuracy)
@@ -156,7 +159,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     model_scripted.save(run_model_path)
 
     if not is_minibatch:
-        eval_model(model=model, loader=val_loader, state='val', log=log)
+        eval_model(model=model, loader=val_loader, device=device, state='val', log=log)
 
     tb_writer.close()
 

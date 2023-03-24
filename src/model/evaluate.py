@@ -6,7 +6,7 @@ from torch.utils.tensorboard import SummaryWriter
 from src.data.consts.piece_consts import REVERSED_LABELS, LABELS
 
 
-def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logging.Logger = None,
+def eval_model(model, loader: torch.utils.data.DataLoader, device: str, state: str, log: logging.Logger = None,
                epoch_num: int = None, tb_writer: SummaryWriter = None):
     """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
 
@@ -27,8 +27,9 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logg
         class_counts = torch.zeros(num_classes)
 
         for i, (image, label) in enumerate(loader):
-            class_probs = model(image)
-            class_pred = torch.argmax(torch.exp(class_probs), axis=1)
+            class_probs = model(image.to(device))
+            class_pred = torch.argmax(torch.exp(class_probs), axis=1).cpu()
+            image.cpu()
 
             class_label = torch.argmax(label, axis=1)
 
