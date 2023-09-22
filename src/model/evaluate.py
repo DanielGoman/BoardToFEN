@@ -1,13 +1,14 @@
 import logging
 
 import torch
+import torchvision.utils
 from torch.utils.tensorboard import SummaryWriter
 
 from src.data.consts.piece_consts import REVERSED_LABELS, LABELS
 
 
-def eval_model(model, loader: torch.utils.data.DataLoader, device: str, state: str, log: logging.Logger = None,
-               epoch_num: int = None, tb_writer: SummaryWriter = None):
+def eval_model(model, loader: torch.utils.data.DataLoader, device: str, state: str = 'Full eval',
+               log: logging.Logger = None, epoch_num: int = None, tb_writer: SummaryWriter = None):
     """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
 
     Args:
@@ -26,12 +27,15 @@ def eval_model(model, loader: torch.utils.data.DataLoader, device: str, state: s
         class_correct_hits = torch.zeros(num_classes)
         class_counts = torch.zeros(num_classes)
 
-        for i, (image, label) in enumerate(loader):
-            class_probs = model(image.to(device))
-            class_pred = torch.argmax(torch.exp(class_probs), axis=1).cpu()
-            image.cpu()
+        for i, (images, labels) in enumerate(loader):
+            img_grid = torchvision.utils.make_grid(images)
+            tb_writer.add_image(f'Evaluation on {state}, epoch {epoch_num}, eval iteration {i}', img_grid)
 
-            class_label = torch.argmax(label, axis=1)
+            class_probs = model(images.to(device))
+            class_pred = torch.argmax(torch.exp(class_probs), axis=1).cpu()
+            images.cpu()
+
+            class_label = torch.argmax(labels, axis=1)
 
             class_correct_hits[class_label] += (class_pred == class_label).to(torch.int64)
             labels_count_per_class = torch.bincount(class_label)

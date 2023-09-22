@@ -164,7 +164,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     model_scripted.save(run_model_path)
 
     if not is_minibatch:
-        eval_model(model=model, loader=val_loader, device=device, state='val', log=log)
+        eval_model(model=model, loader=val_loader, device=device, state='val', log=log, tb_writer=tb_writer)
 
     tb_writer.close()
 
