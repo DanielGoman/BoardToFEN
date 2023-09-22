@@ -7,6 +7,8 @@ import torch.nn as nn
 import numpy as np
 
 from typing import List, Dict
+
+import torchvision.utils
 from omegaconf import DictConfig
 from matplotlib import pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
@@ -117,10 +119,13 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             interval_loss += loss.item()
             epoch_loss += loss.item()
 
-            if iter_num % print_interval == 0 and iter_num > 0:
-                log.info(f'epoch: {epoch}, iteration: {iter_num}, loss: '
-                         f'{interval_loss / (print_interval * batch_size):.3f}')
-                interval_loss = 0.0
+            if iter_num % print_interval == 0:
+                img_grid = torchvision.utils.make_grid(images)
+                tb_writer.add_image(f'Epoch {epoch} batch {iter_num}', img_grid)
+                if iter_num > 0:
+                    log.info(f'epoch: {epoch}, iteration: {iter_num}, loss: '
+                             f'{interval_loss / (print_interval * batch_size):.3f}')
+                    interval_loss = 0.0
 
             if 0 < minibatch_size == iter_num:
                 break
