@@ -5,6 +5,7 @@ import torchvision.utils
 from torch.utils.tensorboard import SummaryWriter
 
 from src.data.consts.piece_consts import REVERSED_LABELS, LABELS
+from src.visualization.tensorboard_visualization_utils import plot_classes_preds
 
 
 def eval_model(model, loader: torch.utils.data.DataLoader, device: str, state: str = 'Full eval',
@@ -28,11 +29,13 @@ def eval_model(model, loader: torch.utils.data.DataLoader, device: str, state: s
         class_counts = torch.zeros(num_classes)
 
         for i, (images, labels) in enumerate(loader):
-            img_grid = torchvision.utils.make_grid(images)
-            tb_writer.add_image(f'Evaluation on {state}, epoch {epoch_num}, eval iteration {i}', img_grid)
+            # img_grid = torchvision.utils.make_grid(images)
+            output = model(images.to(device))
+            class_pred = torch.argmax(torch.exp(output), axis=1).cpu()
 
-            class_probs = model(images.to(device))
-            class_pred = torch.argmax(torch.exp(class_probs), axis=1).cpu()
+            tb_writer.add_figure(f'Evaluation on {state}, epoch {epoch_num}, eval iteration {i}',
+                                 plot_classes_preds(images, output.cpu(), labels)) #,
+                                 # global_step=epoch_num * len(loader) + i)
             images.cpu()
 
             class_label = torch.argmax(labels, axis=1)
@@ -55,7 +58,7 @@ def eval_model(model, loader: torch.utils.data.DataLoader, device: str, state: s
             log.info(f'Balanced class accuracy: {balanced_class_accuracy.item():.3f}')
 
         if tb_writer:
-            tb_writer.add_scalar('Balanced class accuracy on train', balanced_class_accuracy.item(), epoch_num)
+            tb_writer.add_scalar('A - Balanced class accuracy on train', balanced_class_accuracy.item(), epoch_num)
             tb_writer.flush()
 
         return balanced_class_accuracy
