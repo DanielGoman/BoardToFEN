@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import torch
 import torch.nn as nn
 
@@ -11,7 +9,7 @@ class PieceClassifier(nn.Module):
         self.conv_block2 = ConvBlock(in_channels=hidden_dim, out_channels=out_channels)
         self.conv_block3 = ConvBlock(in_channels=out_channels, out_channels=out_channels * 4)
 
-        self.linear = nn.Linear(in_features=(16 * 4) * 4 * 4, out_features=4 * 4 * 4)
+        self.linear = nn.Linear(in_features=(16 * 4) * 8 * 8, out_features=4 * 4 * 4)
 
         self.class_linear = nn.Linear(in_features=4 * 4 * 4, out_features=num_classes)
 
