@@ -75,8 +75,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
         eval_train_loader = get_subset_dataloader(dataset=train_dataset,
                                                   subset_ratio=config.hyperparams.train.eval_train_size)
-        eval_val_loader = get_subset_dataloader(dataset=val_dataset,
-                                                subset_ratio=config.hyperparams.train.eval_val_size)
+        # eval_val_loader = get_subset_dataloader(dataset=val_dataset,
+        #                                         subset_ratio=config.hyperparams.train.eval_val_size)
+        eval_val_loader = val_loader
 
     train_size = len(train_dataset) * batch_size
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
@@ -105,9 +106,9 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             images, label = data
             images, label = images.to(device), label.to(device)
 
-            class_pred = model(images)
+            output_scores = model(images)
 
-            loss = criterion(class_pred, label)
+            loss = criterion(output_scores, label)
 
             loss.backward()
             optimizer.step()
@@ -130,10 +131,19 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
             if 0 < minibatch_size == iter_num:
                 break
 
-        epoch_train_accuracy = eval_model(model, eval_train_loader, device=device, state='train',
-                                          epoch_num=epoch, tb_writer=tb_writer)
-        epoch_val_accuracy = eval_model(model, eval_val_loader, device=device, state='val',
-                                             epoch_num=epoch, tb_writer=tb_writer)
+        epoch_train_accuracy, epoch_train_loss = eval_model(model, criterion, eval_train_loader, device=device,
+                                                            state='train', epoch_num=epoch, tb_writer=tb_writer)
+        epoch_val_accuracy, epoch_val_loss = eval_model(model, criterion, eval_val_loader, device=device, state='val',
+                                                        epoch_num=epoch, tb_writer=tb_writer)
+        tb_writer.add_scalars('Balanced class accuracy',
+                              {'train': epoch_train_accuracy,
+                               'val': epoch_val_accuracy},
+                              global_step=epoch)
+
+        tb_writer.add_scalars('Loss',
+                              {'train': epoch_train_loss,
+                               'val': epoch_val_loss},
+                              global_step=epoch)
 
         epoch_train_accuracies.append(epoch_train_accuracy)
         if not is_minibatch:
@@ -144,13 +154,12 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
         log.info(f'epoch {epoch} loss: {epoch_loss:.3f}\n')
 
-        tb_writer.add_scalar('A - Epoch Loss', epoch_loss, epoch)
         tb_writer.flush()
 
     if is_minibatch:
-        plot_learning_curves(epoch_losses, epoch_train_accuracies, plots_path)
+        plot_learning_curves(epoch_losses, epoch_train_accuracies, plots_path=plots_path)
     else:
-        plot_learning_curves(epoch_losses, epoch_train_accuracies, epoch_val_accuracies, plots_path)
+        plot_learning_curves(epoch_losses, epoch_train_accuracies, epoch_val_accuracies, plots_path=plots_path)
 
     log.info('Finished training\n')
 
@@ -164,7 +173,8 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
     model_scripted.save(run_model_path)
 
     if not is_minibatch:
-        eval_model(model=model, loader=val_loader, device=device, state='val', log=log, tb_writer=tb_writer)
+        eval_model(model=model, criterion=criterion, loader=val_loader,
+                   device=device, state='val', log=log, tb_writer=tb_writer)
 
     tb_writer.close()
 
@@ -188,8 +198,8 @@ def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float
     return subset_loader
 
 
-def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracies: Dict[str, List[float]],
-                         epoch_val_accuracies: Dict[str, List[float]] = None, plots_path: str = ''):
+def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracies: List[float],
+                         epoch_val_accuracies: List[float] = None, plots_path: str = ''):
     """Plots train loss, train accuracy and validation accuracy over epochs
 
     Args:
