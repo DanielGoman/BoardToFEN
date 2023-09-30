@@ -144,7 +144,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
         log.info(f'epoch {epoch} loss: {epoch_loss:.3f}\n')
 
-        tb_writer.add_scalar('Epoch Loss', epoch_loss, epoch)
+        tb_writer.add_scalar('A - Epoch Loss', epoch_loss, epoch)
         tb_writer.flush()
 
     if is_minibatch:
