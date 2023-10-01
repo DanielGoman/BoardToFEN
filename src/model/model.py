@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -27,6 +28,17 @@ class PieceClassifier(nn.Module):
         class_scores = self.class_linear(x)
 
         return class_scores
+
+    def inference(self, x: torch.Tensor) -> np.ndarray:
+        """Runs the input squares through the model (forward)
+
+        Args:
+            x: input batch of squares
+
+        Returns:
+            the predicted labels per square
+        """
+        pass
 
 
 class ConvBlock(nn.Module):
