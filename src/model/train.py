@@ -229,5 +229,6 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracies: List
     plt.show()
 
 
+# tensorboard --logdir=runs
 if __name__ == "__main__":
     train()
