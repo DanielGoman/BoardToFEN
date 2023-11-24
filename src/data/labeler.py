@@ -1,9 +1,22 @@
-
-
 from consts.path_consts import DIRS_TO_PARSE_NAMES
 
 
 def get_piece_labels(x: int, y: int, board_type: str) -> str:
+    """Converts the square indices into the piece that is there.
+    This assumes one of two input image types - either full boards, or boards that have only a king and a queen
+    with replaced locations.
+    Hence, for every type of input board, we know the piece that is supposed to be at any square, and we label them
+    accordingly
+
+    Args:
+        x: row index
+        y: column index
+        board_type: board type, according to the `DIRS_TO_PARSE_NAMES` const
+
+    Returns:
+        label: the proper label to the given square w.r.t the type of the board (board_type)
+
+    """
     label = None
 
     if x not in [1, 2, 7, 8]:
