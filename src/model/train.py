@@ -3,12 +3,11 @@ import logging
 import hydra
 
 import torch
-import torch.nn as nn
+import torchvision
 import numpy as np
+import torch.nn as nn
 
-from typing import List, Dict
-
-import torchvision.utils
+from typing import List
 from omegaconf import DictConfig
 from matplotlib import pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
