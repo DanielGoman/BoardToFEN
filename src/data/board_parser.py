@@ -110,7 +110,8 @@ def label_squares(squares_dict: Dict[Tuple[int, int], np.ndarray], board_type: s
     return labeled_squares_dict
 
 
-def save_squares(labeled_squares_dict: Dict[Tuple[int, int], np.ndarray], data_dir_index: int, stripped_file_name: str):
+def save_squares(labeled_squares_dict: Dict[Tuple[int, int], Dict[str, Any]], data_dir_index: int,
+                 stripped_file_name: str) -> Dict[Tuple[int, int], Dict[str, str]]:
     """Saves the squares images as a `.png` file, and puts their respective labels in a dict that will be later saved
     as a `.json` file
 
