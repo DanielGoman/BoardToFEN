@@ -1,11 +1,10 @@
 import cv2
-import numpy as np
 import itertools
+import numpy as np
 
 from typing import List, Dict, Tuple
 from scipy.signal import convolve2d
 from matplotlib import pyplot as plt
-from pprint import pprint
 
 
 class Board:
@@ -41,6 +40,50 @@ class Board:
         # cv2.imwrite('board_kp.png', img)
 
         return frame, key_points, descriptors
+
+
+def parse_board(image: np.ndarray) -> List[List[np.ndarray]]:
+    edges = get_edge_image(image)
+
+    cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges)
+
+    board_squares = split_board_image_to_squares(cropped_image, cropped_row_seq, cropped_col_seq)
+
+    return board_squares
+
+
+def get_edge_image(image: np.ndarray, threshold: int = 50) -> np.ndarray:
+    edges = cv2.Canny(image, 50, 250)
+    edges[edges < threshold] = 0
+    edges[edges >= threshold] = 1
+
+    return edges
+
+
+def crop_image(image: np.ndarray, edges: np.ndarray) -> np.ndarray:
+    cropped_edges, cropped_row_seq, cropped_col_seq, x_crop, y_crop = crop_by_seq(edges)
+    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]
+
+    return cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq
+
+
+def split_board_image_to_squares(image: np.ndarray, cropped_row_seq: np.ndarray, cropped_col_seq: np.ndarray,
+                                 board_side_size: int = 8) -> Dict[Tuple[int, int], np.ndarray]:
+
+    board_square_vertices = convert_frame_to_square_vertices(cropped_row_seq, cropped_col_seq)
+
+    board_squares = {}
+
+    fig, axs = plt.subplots(8, 8)
+    for i in range(board_side_size):
+        for j in range(board_side_size):
+            square_idx = board_square_vertices[i, j]
+            square = image[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
+            board_squares[(i, j)] = square
+            axs[i][j].imshow(square)
+    plt.show()
+
+    return board_squares
 
 
 def convert_frame_to_square_vertices(row_seq: List[int], col_seq: List[int], board_size: int = 8) -> np.ndarray:
@@ -128,34 +171,6 @@ def pad_fragments(fragments: List[np.ndarray]) -> np.ndarray:
     return padded_fragments, pad_start, pad_end
 
 
-def unpad_fragments(padded_fragments: np.ndarray, start_pad: int, end_pad: int) -> List[np.ndarray]:
-    fragments = list(padded_fragments.copy())
-    fragments[0] = fragments[0][start_pad:]
-    fragments[-1] = fragments[-1][:-end_pad]
-
-    return fragments
-
-
-def crop_by_sum(edges):
-    height, width = edges.shape[:2]
-    portion = 0.6
-    x_sum = np.sum(edges, axis=1)
-    y_sum = np.sum(edges, axis=0)
-
-    x_start = np.argmax(x_sum > portion * width)
-    y_start = np.argmax(y_sum > portion * height)
-
-    x_end = height - np.argmax(x_sum[::-1] > portion * width)
-    y_end = width - np.argmax(y_sum[::-1] > portion * height)
-
-    # print('Crop by sum:')
-    #
-    # print(f'start: ({x_start}, {y_start})')
-    # print(f'end: ({x_end}, {y_end})\n')
-    #
-    # plt.imsave('sum_crop.png', edges[x_start: x_end, y_start: y_end], cmap='gray')
-
-
 def crop_by_seq(edges: np.ndarray, portion=0.1) -> (np.ndarray, np.ndarray, np.ndarray):
     height, width = edges.shape
     row_seq = get_max_seq_lens_per_row(edges)
@@ -217,50 +232,6 @@ def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
     np.put(max_seq_len_per_row_no_holes, existent_rows, max_seq_len_per_row)
 
     return max_seq_len_per_row_no_holes
-
-
-def get_edge_image(image: np.ndarray, threshold: int = 50) -> np.ndarray:
-    edges = cv2.Canny(image, 50, 250)
-    edges[edges < threshold] = 0
-    edges[edges >= threshold] = 1
-
-    return edges
-
-
-def crop_image(image: np.ndarray, edges: np.ndarray) -> np.ndarray:
-    cropped_edges, cropped_row_seq, cropped_col_seq, x_crop, y_crop = crop_by_seq(edges)
-    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]
-
-    return cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq
-
-
-def split_board_image_to_squares(image: np.ndarray, cropped_row_seq: np.ndarray, cropped_col_seq: np.ndarray,
-                                 board_side_size: int = 8) -> Dict[Tuple[int, int], np.ndarray]:
-
-    board_square_vertices = convert_frame_to_square_vertices(cropped_row_seq, cropped_col_seq)
-
-    board_squares = {}
-
-    fig, axs = plt.subplots(8, 8)
-    for i in range(board_side_size):
-        for j in range(board_side_size):
-            square_idx = board_square_vertices[i, j]
-            square = image[square_idx[0]: square_idx[2], square_idx[1]: square_idx[3]]
-            board_squares[(i, j)] = square
-            axs[i][j].imshow(square)
-    plt.show()
-
-    return board_squares
-
-
-def parse_board(image: np.ndarray) -> List[List[np.ndarray]]:
-    edges = get_edge_image(image)
-
-    cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges)
-
-    board_squares = split_board_image_to_squares(cropped_image, cropped_row_seq, cropped_col_seq)
-
-    return board_squares
 
 
 if __name__ == "__main__":
