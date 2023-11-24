@@ -42,10 +42,10 @@ class Board:
         return frame, key_points, descriptors
 
 
-def parse_board(image: np.ndarray) -> List[List[np.ndarray]]:
-    edges = get_edge_image(image)
+def parse_board(image: np.ndarray, verbose: bool = False) -> List[List[np.ndarray]]:
+    edges = get_edge_image(image, threshold=200)
 
-    cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges)
+    cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges, verbose=verbose)
 
     board_squares = split_board_image_to_squares(cropped_image, cropped_row_seq, cropped_col_seq)
 
@@ -60,9 +60,13 @@ def get_edge_image(image: np.ndarray, threshold: int = 50) -> np.ndarray:
     return edges
 
 
-def crop_image(image: np.ndarray, edges: np.ndarray) -> np.ndarray:
+def crop_image(image: np.ndarray, edges: np.ndarray, verbose: bool) -> np.ndarray:
     cropped_edges, cropped_row_seq, cropped_col_seq, x_crop, y_crop = crop_by_seq(edges)
-    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]
+    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]\
+
+    if verbose:
+        print('Original size:', image.shape)
+        print('Cropped size:', cropped_image.shape)
 
     return cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq
 
@@ -238,18 +242,7 @@ if __name__ == "__main__":
     path = "../../dataset/full_boards/31.png"
     _image = cv2.imread(path)
 
-    print('Image shape:', _image.shape[:2])
-    print()
-
-    # edge detector
-    _edges = get_edge_image(_image, threshold=200)
-
-    _cropped_image, _cropped_edges, _cropped_row_seq, _cropped_col_seq = crop_image(_image, _edges)
-
-    print('Cropped size:', _cropped_edges.shape)
-    print()
-
-    split_board_image_to_squares(_cropped_image, _cropped_row_seq, _cropped_col_seq)
+    parse_board(_image, verbose=True)
 
 
     # TODO: get piece templates
