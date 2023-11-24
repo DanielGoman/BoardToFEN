@@ -1,9 +1,8 @@
 import json
-from typing import List, Tuple
-
 import hydra
 import numpy as np
 
+from typing import List, Tuple
 from omegaconf import DictConfig
 
 from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
