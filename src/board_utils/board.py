@@ -6,7 +6,11 @@ from typing import List, Dict, Tuple
 from scipy.signal import convolve2d
 from matplotlib import pyplot as plt
 
+from src.board_utils.consts import Canny
+from src.data.consts.squares_consts import BOARD_SIDE_SIZE
 
+
+#TODO: Remove Board if it's deprecated
 class Board:
     def __init__(self, board_template_path):
         self.sift_feature_extractor = cv2.SIFT_create()
@@ -42,8 +46,20 @@ class Board:
         return frame, key_points, descriptors
 
 
-def parse_board(image: np.ndarray, verbose: bool = False) -> List[List[np.ndarray]]:
-    edges = get_edge_image(image, threshold=200)
+def parse_board(image: np.ndarray, verbose: bool = False) -> Dict[Tuple[int, int], np.ndarray]:
+    """Parses an image that presumably contains a chess board, returning a dictionary of squares of the board
+
+    Args:
+        image: an image that contains a chess board. The image can also include background to an extent
+        verbose: prints information during runtime if True, otherwise False
+
+    Returns:
+        board_squares: "2d" dict of squares.
+                        board_squares[(square_x, square_y)] = np.ndarray of the square
+
+    """
+    edges = get_edge_image(image, lower_threshold=Canny.lower_threshold.value,
+                           upper_threshold=Canny.upper_threshold.value)
 
     cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges, verbose=verbose)
 
@@ -52,17 +68,47 @@ def parse_board(image: np.ndarray, verbose: bool = False) -> List[List[np.ndarra
     return board_squares
 
 
-def get_edge_image(image: np.ndarray, threshold: int = 50) -> np.ndarray:
-    edges = cv2.Canny(image, 50, 250)
-    edges[edges < threshold] = 0
-    edges[edges >= threshold] = 1
+def get_edge_image(image: np.ndarray, lower_threshold: int, upper_threshold: int) -> np.ndarray:
+    """Uses the Canny edge detector to find and filter edges according to the edge threshold
+    Edges with gradients below  `lower_threshold` are removed, edges with gradients above `upper_threshold` are kept.
+    Edges with gradients between `lower_threshold` and `upper_threshold` are kept only if they're adjacent to
+    at least one edge that has a gradient above `upper_threshold`
+
+    Args:
+        image: input image
+        lower_threshold: all edges with gradients below this threshold are removed
+        upper_threshold: all edges with gradients above this threshold are kept
+
+    Returns:
+        edges: binary edges image
+
+    """
+    edges = cv2.Canny(image, lower_threshold, upper_threshold)
+    edges[edges > 0] = 1
 
     return edges
 
 
-def crop_image(image: np.ndarray, edges: np.ndarray, verbose: bool) -> np.ndarray:
+def crop_image(image: np.ndarray, edges: np.ndarray, verbose: bool) -> \
+        Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Crops an image to a smaller image that contains only the chess board
+
+    Args:
+        image: input image
+        edges: binary edge mask of the input image
+        verbose: prints information during runtime if True, otherwise False
+
+    Returns:
+        cropped_image: the input image, cropped to contain only the chess board inside it
+        cropped_edges: the binary edge mask, cropped to contain only the chess board inside it
+        cropped_row_seq: the longest row sequence in the edge mask image, according to which the width of the cropped
+                            image was selected
+        cropped_col_seq: the longest col sequence in the edge mask image, according to which the height of the cropped
+                            image was selected
+
+    """
     cropped_edges, cropped_row_seq, cropped_col_seq, x_crop, y_crop = crop_by_seq(edges)
-    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]\
+    cropped_image = image[x_crop[0]: x_crop[1], y_crop[0]: y_crop[1]]
 
     if verbose:
         print('Original size:', image.shape)
@@ -72,13 +118,27 @@ def crop_image(image: np.ndarray, edges: np.ndarray, verbose: bool) -> np.ndarra
 
 
 def split_board_image_to_squares(image: np.ndarray, cropped_row_seq: np.ndarray, cropped_col_seq: np.ndarray,
-                                 board_side_size: int = 8) -> Dict[Tuple[int, int], np.ndarray]:
+                                 board_side_size: int = BOARD_SIDE_SIZE) -> Dict[Tuple[int, int], np.ndarray]:
+    """Converts an image of a board to a dict of squares
 
+    Args:
+        image: a cropped image of a board
+        cropped_row_seq: the longest row sequence in the edge mask image, according to which the width of the cropped
+                            image was selected
+        cropped_col_seq: the longest col sequence in the edge mask image, according to which the height of the cropped
+                            image was selected
+        board_side_size: the sizes of the board (assumes the board is of equal height and width)
+
+    Returns:
+        board_squares: "2d" dict of squares.
+                        board_squares[(square_x, square_y)] = np.ndarray of the square
+
+    """
     board_square_vertices = convert_frame_to_square_vertices(cropped_row_seq, cropped_col_seq)
 
     board_squares = {}
 
-    fig, axs = plt.subplots(8, 8)
+    fig, axs = plt.subplots(board_side_size, board_side_size)
     for i in range(board_side_size):
         for j in range(board_side_size):
             square_idx = board_square_vertices[i, j]
@@ -90,7 +150,8 @@ def split_board_image_to_squares(image: np.ndarray, cropped_row_seq: np.ndarray,
     return board_squares
 
 
-def convert_frame_to_square_vertices(row_seq: List[int], col_seq: List[int], board_size: int = 8) -> np.ndarray:
+def convert_frame_to_square_vertices(row_seq: np.ndarray, col_seq: np.ndarray,
+                                     board_size: int = BOARD_SIDE_SIZE) -> np.ndarray:
     """Uses the x and y axis' edge sequences to calculate indices for each square on the board inside the given frame
 
     Args:
@@ -122,9 +183,14 @@ def convert_frame_to_square_vertices(row_seq: List[int], col_seq: List[int], boa
     return squares_idx.astype(int)
 
 
-def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
+def find_edges(seq: np.ndarray, split_size, margin_size: int = 1) -> List[Tuple[int, int]]:
     """Finds the indices of the edges on the board along a single axis
     The axis is explicitly passed through the `seq` variable
+    - In order to do this, the board is split into `split_size` + 1 fragments, to ensure each fragment contains exactly
+        one major edge of the board.
+        For example, a board of width 8 will have 7 major inner edges and 2 major outer edges, 9 in total.
+    - We apply a filter to find the exact index of the edge in each fragment, so that the splitting into squares
+        will be as accurate as possible
 
     Args:
         seq: list of the longest sequences of edges in all rows or in all columns
@@ -159,7 +225,22 @@ def find_edges(seq: List[int], split_size, margin_size: int = 1) -> np.ndarray:
     return edges_margins
 
 
-def pad_fragments(fragments: List[np.ndarray]) -> np.ndarray:
+def pad_fragments(fragments: List[np.ndarray]) -> Tuple[np.ndarray, int, int]:
+    """Pads the list of numpy array so that each array is of the same shape
+    Essentially only the first and last fragment should be needing a padding, as it is expected from a digital board
+    to have all of its squares of exactly the same shape.
+    The sizes of the edges of the board may vary, and for this reason we pad them.
+    This is done only to allow using matrices for the convolution step.
+
+    Args:
+        fragments: partitions of the edge sequence, such that each fragment includes exactly one major edge
+
+    Returns:
+        padded_fragments: single np.ndarray after applying padding to the first and last fragment
+        pad_start: the number of pixels that were used to pad the first fragment
+        pad_end: the number of pixels that were used to pad the last fragment
+
+    """
     padded_fragments = fragments.copy()
 
     required_size = len(fragments[1])
@@ -175,13 +256,32 @@ def pad_fragments(fragments: List[np.ndarray]) -> np.ndarray:
     return padded_fragments, pad_start, pad_end
 
 
-def crop_by_seq(edges: np.ndarray, portion=0.1) -> (np.ndarray, np.ndarray, np.ndarray):
+def crop_by_seq(edges: np.ndarray, portion=0.1) -> \
+        Tuple[np.ndarray, np.ndarray, np.ndarray, Tuple[int, int], Tuple[int, int]]:
+    """Crops the binary edges mask to contain only the board
+
+    Args:
+        edges: uncropped binary edges mask
+        portion: the minimal proportion of the image that an edge need to take up to be identified as an edge of the
+                    board. This can be problematic if a very large image is selected, which contains long edges
+                    beside the board.
+
+    Returns:
+        cropped_edges: the binary edge mask, cropped to contain only the chess board inside it
+        cropped_row_seq: the longest row sequence in the edge mask image, according to which the width of the cropped
+                            image was selected
+        cropped_col_seq: the longest col sequence in the edge mask image, according to which the height of the cropped
+                            image was selected
+        x_crop_indices: the indices of the start and end of the horizontal crop, any index outside this range is cropped
+        y_crop_indices: the indices of the start and end of the vertical crop, any index outside this range is cropped
+
+    """
     height, width = edges.shape
     row_seq = get_max_seq_lens_per_row(edges)
     col_seq = get_max_seq_lens_per_row(edges.T)
 
-    x_start = np.argmax(row_seq > portion * width)
-    y_start = np.argmax(col_seq > portion * height)
+    x_start = int(np.argmax(row_seq > portion * width))
+    y_start = int(np.argmax(col_seq > portion * height))
 
     x_end = height - np.argmax(row_seq[::-1] > portion * width)
     y_end = width - np.argmax(col_seq[::-1] > portion * height)
@@ -189,8 +289,10 @@ def crop_by_seq(edges: np.ndarray, portion=0.1) -> (np.ndarray, np.ndarray, np.n
     cropped_row_seq = row_seq[x_start: x_end]
     cropped_col_seq = col_seq[y_start: y_end]
     cropped_edges = edges[x_start: x_end, y_start: y_end]
+    x_crop_indices = (x_start, x_end)
+    y_crop_indices = (y_start, y_end)
 
-    return cropped_edges, cropped_row_seq, cropped_col_seq, (x_start, x_end), (y_start, y_end)
+    return cropped_edges, cropped_row_seq, cropped_col_seq, x_crop_indices, y_crop_indices
 
 
 def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
@@ -215,7 +317,7 @@ def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
     # Finds the start and end of all the sequences
     rows_number, seq_idx = np.where(diff)
 
-    # number of the sequences found per row - if found 2 sequences in some row, then the lengthfor that row
+    # number of the sequences found per row - if found 2 sequences in some row, then the length for that row
     # would be 4:   start_idx_seq1, end_idx_seq1, start_idx_seq2, end_idx_seq2
     row_unique_seqs_number = [len(list(values)) for key, values in itertools.groupby(rows_number)]
     # start and end of the sequences list of each row
@@ -243,7 +345,3 @@ if __name__ == "__main__":
     _image = cv2.imread(path)
 
     parse_board(_image, verbose=True)
-
-
-    # TODO: get piece templates
-    # TODO: decide how to match between templates to cropped squares
