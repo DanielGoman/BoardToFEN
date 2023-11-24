@@ -17,6 +17,14 @@ class PieceClassifier(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """Performs a forward pass on the received tensor
+
+        Args:
+            x: tensor of shape (Batch, Channels, Height, Width)
+
+        Returns:
+            class_scores: class scores of shape (Batch, N classes)
+        """
         x = self.conv_block1(x)
         x = self.conv_block2(x)
         x = self.conv_block3(x)
@@ -30,15 +38,19 @@ class PieceClassifier(nn.Module):
         return class_scores
 
     def inference(self, x: torch.Tensor) -> np.ndarray:
-        """Runs the input squares through the model (forward)
+        """Performs a froward pass and calculates the predicted classes for every item in the batch
 
         Args:
-            x: input batch of squares
+            x: tensor of shape (Batch, Channels, Height, Width)
 
         Returns:
-            the predicted labels per square
+            class_preds: predicted classes per item in the batch, of shape (Batch, 1)
+
         """
-        pass
+        class_scores = self.forward(x)
+        class_preds = torch.argmax(torch.softmax(class_scores, dim=1), dim=1).cpu()
+
+        return class_preds
 
 
 class ConvBlock(nn.Module):
