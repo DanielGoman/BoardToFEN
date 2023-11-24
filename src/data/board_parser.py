@@ -1,8 +1,8 @@
 import os
 import json
 
-import numpy as np
 import cv2
+import numpy as np
 
 from typing import List, Dict, Tuple, Any
 
@@ -13,6 +13,24 @@ from consts.squares_consts import RELEVANT_SQUARES, BOARD_SIDE_SIZE
 
 
 def board_to_pieces():
+    """Takes in directories of board images.
+    Makes a new directory of images of selected squares out of all those boards.
+    Makes a new `.json` file that contains the respective labels
+
+    The structure of the `.json` labels file is as follows:
+    {
+        'board_type':{
+            'image_id':{
+                '(square_x, square_y)':
+                {
+                    'image_file_name': <image name>,
+                    'label': <label>
+                }
+            }
+        }
+    }
+
+    """
     data_dirs = [DATA_DIR / data_dir for data_dir in DIRS_TO_PARSE_NAMES]
 
     with open(str(LABELS_OUTPUT_FILE_PATH), 'w') as labels_json:
@@ -34,9 +52,6 @@ def board_to_pieces():
 
                 image = cv2.imread(str(file_path))
 
-                # TODO: check if the image has already been parsed
-                # TODO: downsamples pawns/empty squares
-
                 board_squares_dict = parse_board(image=image)
 
                 relevant_squares_dict = get_relevant_squares(board_squares=board_squares_dict,
@@ -51,8 +66,19 @@ def board_to_pieces():
         json.dump(labels_dict, labels_json, indent=4, sort_keys=True)
 
 
-def get_relevant_squares(board_squares: List[List[np.ndarray]], relevant_squares: Dict[str, List[int]]) \
+def get_relevant_squares(board_squares: Dict[Tuple[int, int], np.ndarray], relevant_squares: Dict[str, List[int]]) \
         -> Dict[Tuple[int, int], np.ndarray]:
+    """Takes only the relevant squares from the board, w.r.t to the type of the board
+
+    Args:
+        board_squares: "2d" dict of squares.
+                        board_squares[(square_x, square_y)] = np.ndarray of the square
+        relevant_squares: the rows and columns to select out of the entire board
+
+    Returns:
+        squares_dict: dict similar to board_squares, of only the selected squares
+
+    """
     squares_dict = {}
     for i in relevant_squares['rows']:
         for j in relevant_squares['cols']:
@@ -63,6 +89,18 @@ def get_relevant_squares(board_squares: List[List[np.ndarray]], relevant_squares
 
 def label_squares(squares_dict: Dict[Tuple[int, int], np.ndarray], board_type: str) \
         -> Dict[Tuple[int, int], Dict[str, Any]]:
+    """Gives the proper label to each piece on the board, w.r.t the board type
+
+    Args:
+        squares_dict: "2d" dict of squares.
+                        board_squares[(square_x, square_y)] = np.ndarray of the square
+        board_type: the type of the board - either full board or a board with only the kings and the queens with their
+                        locations replaced
+
+    Returns:
+        labeled_squares_dict: dict for every selected square, of the square's image and its respective label
+
+    """
     labeled_squares_dict = {}
     for (i, j), square in squares_dict.items():
         square_label = get_piece_labels(i, j, board_type)
@@ -73,6 +111,18 @@ def label_squares(squares_dict: Dict[Tuple[int, int], np.ndarray], board_type: s
 
 
 def save_squares(labeled_squares_dict: Dict[Tuple[int, int], np.ndarray], data_dir_index: int, stripped_file_name: str):
+    """Saves the squares images as a `.png` file, and puts their respective labels in a dict that will be later saved
+    as a `.json` file
+
+    Args:
+        labeled_squares_dict: dict for every selected square, of the square's image and its respective label
+        data_dir_index: the index that represents to which board type the current dict belongs to
+        stripped_file_name: the file name of the board image for the current board type
+
+    Returns:
+        labels_dict: dict for every selected square, of the square's label and the name of the board image it belong to
+
+    """
     labels_dict = {}
     for (i, j), square_data in labeled_squares_dict.items():
         out_file_name = f'{data_dir_index}_{stripped_file_name}_{i}_{j}.png'
