@@ -6,6 +6,7 @@ data_paths:
 
 model_paths:
   model_path: saved_model/model.pkl
+  final_model_path: final_model/model.pkl
 
 plot_paths:
   plot_dirname: plots

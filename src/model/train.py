@@ -3,12 +3,11 @@ import logging
 import hydra
 
 import torch
-import torch.nn as nn
+import torchvision
 import numpy as np
+import torch.nn as nn
 
-from typing import List, Dict
-
-import torchvision.utils
+from typing import List
 from omegaconf import DictConfig
 from matplotlib import pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
@@ -229,5 +228,6 @@ def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracies: List
     plt.show()
 
 
+# tensorboard --logdir=rc/model/runs
 if __name__ == "__main__":
     train()
