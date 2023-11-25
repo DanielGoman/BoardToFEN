@@ -22,14 +22,14 @@ class Domains(Enum):
 
 DOMAINS_MAPPING = {
     Domains.chess.value: {
-        'domain': 'www.chess.com',
+        'domain': 'https://www.chess.com',
         'prefix': '/analysis?fen=',
         'fen_rows_connector': '%2F',
         'fen_parts_connector': '+',
         'suffix': '&tab=analysis'
     },
     Domains.lichess.value: {
-        'domain': 'www.lichess.org',
+        'domain': 'https://www.lichess.org',
         'prefix': '/analysis/',
         'fen_rows_connector': '/',
         'fen_parts_connector': '_',

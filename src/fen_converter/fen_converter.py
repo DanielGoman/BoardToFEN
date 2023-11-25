@@ -1,10 +1,12 @@
 import numpy as np
+import logging
 
 from typing import List, Union
 
 from src.data.consts.squares_consts import BOARD_SIDE_SIZE
 from src.fen_converter.fen_utils import convert_row_to_fen
-from src.fen_converter.consts import ACTIVE_COLOR_MAPPING, CASTLING_RIGHTS_MAPPING, FenPartDefaults
+from src.fen_converter.consts import ACTIVE_COLOR_MAPPING, CASTLING_RIGHTS_MAPPING, FenPartDefaults, Domains, \
+    DOMAINS_MAPPING
 
 
 def convert_board_pieces_to_fen(pieces: np.ndarray, active_color: bool, castling_rights: List[bool],
@@ -42,7 +44,7 @@ def convert_board_pieces_to_fen(pieces: np.ndarray, active_color: bool, castling
     fen_parts.append(ACTIVE_COLOR_MAPPING[active_color])
 
     # Part 3 - Possible castling right
-    available_castling_rights_indices = list(np.where(castling_rights))
+    available_castling_rights_indices = np.array(np.where(castling_rights)[0]).tolist()
     available_castling_rights_strings = [CASTLING_RIGHTS_MAPPING[idx] for idx in available_castling_rights_indices]
     available_castling_rights = ''.join(available_castling_rights_strings) if available_castling_rights_strings \
         else FenPartDefaults.str.value
@@ -66,16 +68,54 @@ def convert_board_pieces_to_fen(pieces: np.ndarray, active_color: bool, castling
     return fen_parts
 
 
-def convert_fen_to_url(fen_parts: List[str], domain: str) -> str:
+def convert_fen_to_url(fen_parts: List[str], domain: int) -> str:
     """Joins the parts of the FEN format into a full url to the specified domain, according to the formatting each
     domain requires
 
     Args:
         fen_parts: list of the parts of the FEN format
-        domain: the domain that the FEN link is generated for [chess.com, lichess.org]
+        domain: the id of the domain that the FEN link is generated for [chess.com, lichess.org]
 
     Returns:
-        @: full fen url to the specified domain
+        url: full fen url to the specified domain
 
     """
-    pass
+    url = ''
+    domain_params = DOMAINS_MAPPING[domain]
+
+    if domain == Domains.chess.value or domain == Domains.lichess.value:
+        url_parts = [
+            domain_params['domain'],
+            domain_params['prefix'],
+            domain_params['fen_parts_connector'].join([
+                domain_params['fen_rows_connector'].join(fen_parts[0]),
+                *fen_parts[1:]
+            ]),
+            domain_params['suffix']
+        ]
+        url = ''.join(url_parts)
+    elif domain == Domains.pure_fen.value:
+        url = domain_params['fen_parts_connector'].join([
+            domain_params['fen_rows_connector'].join(fen_parts[0]),
+            *fen_parts[1:]
+        ])
+    else:
+        logging.getLogger(__name__).error(f'Incorrect domain ID {domain}')
+
+    return url
+
+
+if __name__ == "__main__":
+    arr = np.full((8, 8), 12)
+    arr[1:3, 4] = 0
+    arr[0, 0] = 11
+    arr[7, 7] = 5
+    arr = arr.reshape(-1)
+    _fen_parts = convert_board_pieces_to_fen(arr, active_color=False, castling_rights=[False, True, False, True],
+                                             possible_en_passant='e3', n_half_moves=3, n_full_moves=17)
+    print('Fen parts:', _fen_parts)
+
+    domain = Domains.chess.value
+    _url = convert_fen_to_url(_fen_parts, domain=domain)
+    print('Fen url:', _url)
+
