@@ -1,5 +1,6 @@
 from typing import Union
 
+from src.data.consts.squares_consts import BOARD_SIDE_SIZE
 from src.data.consts.piece_consts import BOARD_TO_PIECES_MAP, PIECE_TO_IGNORE
 
 
@@ -20,7 +21,7 @@ def get_piece_labels(x: int, y: int, board_type: str) -> Union[str, None]:
                 or None if there's no need to include the requested square
 
     """
-    label = BOARD_TO_PIECES_MAP[board_type][x - 1][y - 1]
+    label = BOARD_TO_PIECES_MAP[board_type][BOARD_SIDE_SIZE - x][y - 1]
     if label == PIECE_TO_IGNORE:
         return None
 
