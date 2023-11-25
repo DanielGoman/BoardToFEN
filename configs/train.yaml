@@ -2,6 +2,6 @@
 defaults:
   - _self_
   - transforms: train_transforms.yaml
-  - hyperparams: hyperparams.yaml
-  - paths: paths.yaml
+  - hyperparams: train_hyperparams.yaml
+  - paths: train_paths.yaml
   - model_params: model_params.yaml

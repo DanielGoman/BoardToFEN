@@ -2,6 +2,7 @@ import json
 import os
 
 import hydra
+import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
@@ -10,7 +11,7 @@ from omegaconf import DictConfig
 from PIL import Image
 
 from torch.utils.data import Dataset
-from typing import Dict, List
+from typing import Dict, List, Tuple
 
 from src.data.consts.piece_consts import LABELS
 
@@ -102,6 +103,31 @@ class PiecesDataset(Dataset):
                                   num_classes=len(LABELS)).to(torch.float64)
 
         return one_hot_label
+
+    @staticmethod
+    def board_squares_to_pieces_dataset(board_squares: Dict[Tuple[int, int], np.ndarray],
+                                        transforms: list = None) -> torch.Tensor:
+        """Transforms the 2d list of squares into PiecesDataset
+
+        Args:
+            board_squares: "2d" dict of squares.
+                            board_squares[(square_x, square_y)] = np.ndarray of the square
+            transforms: list of transforms to be applied to the squares
+
+        Returns:
+            - PiecesDataset that contains all the squares from `board_squares`
+            - number of squares on the board
+
+        """
+        squares = list(board_squares.values())
+
+        if transforms:
+            squares_pil_images = [Image.fromarray(square_array.astype(np.uint8)) for square_array in squares]
+            transforms = torchvision.transforms.Compose(transforms)
+            squares = [transforms(image) for image in squares_pil_images]
+
+        squares_tensor = torch.Tensor(squares)
+        return squares_tensor
 
     def __len__(self):
         return len(self.image_path_labels_pairs)

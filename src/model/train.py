@@ -16,6 +16,7 @@ from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
 from src.model.dataset import PiecesDataset
 from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
+from src.utils.transforms import parse_config_transforms
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
@@ -53,7 +54,7 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
     is_minibatch = minibatch_size > 0
 
-    transforms = [hydra.utils.instantiate(transform, _convert_='partial') for transform in config.transforms.values()]
+    transforms = parse_config_transforms(config.transforms)
 
     train_dataset = PiecesDataset(images_dir_path=images_dir_path,
                                   labels_path=train_labels_path,
