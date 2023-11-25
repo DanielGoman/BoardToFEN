@@ -1,4 +1,6 @@
 from pynput import keyboard
+from pynput.keyboard import KeyCode
+
 from src.input_utils.image_capture import ImageCapture
 
 
@@ -27,7 +29,7 @@ class KeyboardController:
             key: the keyboard key pressed
 
         """
-        if key.char == self.start_key:
+        if key == KeyCode.from_char(self.start_key):
             cap = ImageCapture()
             img = cap.capture()
 
