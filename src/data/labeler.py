@@ -1,7 +1,10 @@
-from consts.path_consts import DIRS_TO_PARSE_NAMES
+from typing import Union
+
+from src.data.consts.squares_consts import BOARD_SIDE_SIZE
+from src.data.consts.piece_consts import BOARD_TO_PIECES_MAP, PIECE_TO_IGNORE
 
 
-def get_piece_labels(x: int, y: int, board_type: str) -> str:
+def get_piece_labels(x: int, y: int, board_type: str) -> Union[str, None]:
     """Converts the square indices into the piece that is there.
     This assumes one of two input image types - either full boards, or boards that have only a king and a queen
     with replaced locations.
@@ -15,44 +18,11 @@ def get_piece_labels(x: int, y: int, board_type: str) -> str:
 
     Returns:
         label: the proper label to the given square w.r.t the type of the board (board_type)
+                or None if there's no need to include the requested square
 
     """
-    label = None
-
-    if x not in [1, 2, 7, 8]:
-        return 'X'
-
-    elif board_type == str(DIRS_TO_PARSE_NAMES[0]):
-        if x == 2:
-            return 'WP'
-        elif x == 7:
-            return 'BP'
-        else:
-            if x == 1:
-                label = 'W'
-            elif x == 8:
-                label = 'B'
-
-            if y == 1 or y == 8:
-                label += 'R'
-            elif y == 2 or y == 7:
-                label += 'N'
-            elif y == 3 or y == 6:
-                label += 'B'
-            elif y == 4:
-                label += 'Q'
-            elif y == 5:
-                label += 'K'
-
-    elif board_type == str(DIRS_TO_PARSE_NAMES[1]):
-        if x == 1:
-            label = 'W'
-        elif x == 8:
-            label = 'B'
-
-        if y == 4:
-            label += 'K'
-        elif y == 5:
-            label += 'Q'
+    label = BOARD_TO_PIECES_MAP[board_type][BOARD_SIDE_SIZE - x][y - 1]
+    if label == PIECE_TO_IGNORE:
+        return None
 
     return label

@@ -6,8 +6,8 @@ from pathlib import Path
 #       - board with king and queen with their places swapped (to compensate for them being only on one color in
 #           the first type of boards)
 DATA_DIR = Path('../../dataset')
-DIRS_TO_PARSE_NAMES = ['full_boards', 'replaced_king_queen']
-DIRS_TO_PARSE_NAMES = [Path(data_dir) for data_dir in DIRS_TO_PARSE_NAMES]
+DIRS_TO_PARSE_NAMES_STR = ['full_boards', 'replaced_king_queen']
+DIRS_TO_PARSE_NAMES = [Path(data_dir) for data_dir in DIRS_TO_PARSE_NAMES_STR]
 
 # Path to the directory to output the parsed boards
 PIECES_OUTPUT_DIR_NAME = 'squares'
