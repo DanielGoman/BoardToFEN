@@ -115,7 +115,7 @@ if __name__ == "__main__":
                                              possible_en_passant='e3', n_half_moves=3, n_full_moves=17)
     print('Fen parts:', _fen_parts)
 
-    domain = Domains.chess.value
-    _url = convert_fen_to_url(_fen_parts, domain=domain)
+    _domain = Domains.chess.value
+    _url = convert_fen_to_url(_fen_parts, domain=_domain)
     print('Fen url:', _url)
 
