@@ -37,6 +37,6 @@ DOMAINS_MAPPING = {
     },
     Domains.pure_fen.value: {
         'fen_rows_connector': '/',
-        'fen_parts_connector': '_',
+        'fen_parts_connector': ' ',
     }
 }
