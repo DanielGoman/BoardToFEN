@@ -56,12 +56,12 @@ def convert_board_pieces_to_fen(pieces: np.ndarray, active_color: bool, castling
     # Part 5 - Number of moves since last pawn move / piece capture
     if not n_half_moves:
         n_half_moves = FenPartDefaults.int.value
-    fen_parts.append(n_half_moves)
+    fen_parts.append(str(n_half_moves))
 
     # Part 6 - Number of moves
     if not n_full_moves:
         n_full_moves = FenPartDefaults.int.value
-    fen_parts.append(n_full_moves)
+    fen_parts.append(str(n_full_moves))
 
     return fen_parts
 
