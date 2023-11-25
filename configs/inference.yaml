@@ -1,0 +1,8 @@
+defaults:
+  - _self_
+  - transforms: inference_transforms.yaml
+  - paths: inference_paths.yaml
+
+hydra:
+  job_logging:
+    handler: disabled

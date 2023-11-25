@@ -1,9 +1,17 @@
+import hydra
+
+from omegaconf import DictConfig
+
+from src.pipeline.pipeline import Pipeline
 from src.input_utils.keyboard_controler import KeyboardController
-from src.board_utils.board import Board
+from consts import INFERENCE_CONFIG_PATH, INFERENCE_CONFIG_FILE_NAME
 
 
-def main():
-    controller = KeyboardController()
+@hydra.main(config_path=INFERENCE_CONFIG_PATH, config_name=INFERENCE_CONFIG_FILE_NAME, version_base='1.2')
+def main(config: DictConfig):
+    pipeline = Pipeline(model_path=config.paths.final_model_path,
+                        transforms=config.transforms)
+    controller = KeyboardController(pipeline)
     controller.start_listener()
 
 
