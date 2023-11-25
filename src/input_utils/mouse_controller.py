@@ -12,8 +12,8 @@ class MouseController:
 
     def __init__(self):
         self.click_counter = 0
-        self.top_left = None
-        self.bottom_right = None
+        self.point1 = None
+        self.point2 = None
 
     def select_capture_region(self) -> Tuple[int, int, int, int]:
         """Starts the mouse key clicking listener
@@ -27,7 +27,9 @@ class MouseController:
         with mouse.Listener(on_click=self.on_click) as mouse_listener:
             mouse_listener.join()
 
-        return *self.top_left, *self.bottom_right
+        top_left = (min(self.point1[0], self.point2[0]), min(self.point1[1], self.point2[1]))
+        bottom_right = (max(self.point1[0], self.point2[0]), max(self.point1[1], self.point2[1]))
+        return top_left[0], top_left[1], bottom_right[0], bottom_right[1]
 
     def on_click(self, x, y, button, pressed):
         """Called when a mouse key is clicked or released
@@ -48,9 +50,9 @@ class MouseController:
         if button == mouse.Button.left:
             self.click_counter += 1
             if self.click_counter == self.FIRST_CLICK:
-                self.top_left = (x, y)
+                self.point1 = (x, y)
             elif self.click_counter == self.SECOND_CLICK:
-                self.bottom_right = (x, y)
+                self.point2 = (x, y)
                 return False
 
 
