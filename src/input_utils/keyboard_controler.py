@@ -1,7 +1,7 @@
 from pynput import keyboard
 from pynput.keyboard import KeyCode
 
-from src.input_utils.image_capture import ImageCapture
+from src.pipeline.pipeline import Pipeline
 
 
 class KeyboardController:
@@ -9,8 +9,9 @@ class KeyboardController:
     To start capturing a single frame, click c
 
     """
-    def __init__(self, start_key: str = 'c'):
+    def __init__(self, pipeline: Pipeline, start_key: str = 'c'):
         self.start_key = start_key
+        self.pipeline = pipeline
 
     def start_listener(self):
         """Starts the key pressing listener
@@ -30,8 +31,7 @@ class KeyboardController:
 
         """
         if key == KeyCode.from_char(self.start_key):
-            cap = ImageCapture()
-            img = cap.capture()
+            self.pipeline.run_pipeline()
 
 
 if __name__ == "__main__":
