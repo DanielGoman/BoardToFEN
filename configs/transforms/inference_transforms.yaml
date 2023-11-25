@@ -1,0 +1,7 @@
+
+to_tensor:
+  _target_: torchvision.transforms.ToTensor
+
+resize:
+  _target_: torchvision.transforms.Resize
+  size: [64, 64]

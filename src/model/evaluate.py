@@ -1,13 +1,14 @@
 import logging
-
 import torch
+
 from torch.utils.tensorboard import SummaryWriter
 
-from src.data.consts.piece_consts import REVERSED_PIECE_TYPE, REVERSED_PIECE_COLOR
+from src.data.consts.piece_consts import REVERSED_LABELS, LABELS
+from src.visualization.tensorboard_visualization_utils import plot_classes_preds
 
 
-def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logging.Logger = None,
-               epoch_num: int = None, tb_writer: SummaryWriter = None):
+def eval_model(model, criterion, loader: torch.utils.data.DataLoader, device: str, state: str = 'Full eval',
+               log: logging.Logger = None, epoch_num: int = None, tb_writer: SummaryWriter = None):
     """Evaluates the per-class type and color accuracy, as well as a balanced accuracy for type and class
 
     Args:
@@ -18,60 +19,45 @@ def eval_model(model, loader: torch.utils.data.DataLoader, state: str, log: logg
         epoch_num: number of the current epoch
         tb_writer: TensorBoard writer object, used to log results per epoch
 
+    Returns:
+        balanced_class_accuracy: Balanced accuracy score on the given loader
+        loss: loss on the given loader
+
     """
     model.eval()
     with torch.no_grad():
-        num_piece_classes = len(REVERSED_PIECE_TYPE)
-        num_piece_colors = len(REVERSED_PIECE_COLOR)
+        loss = 0
+        num_classes = len(LABELS)
+        confusion_matrix = torch.zeros((num_classes, num_classes), dtype=torch.int64)
+        for i, (images, labels) in enumerate(loader):
+            output_scores = model(images.to(device)).cpu()
+            loss_i = criterion(output_scores, labels)
+            class_preds = torch.argmax(torch.softmax(output_scores, dim=1), dim=1).cpu()
 
-        type_correct_hits = torch.zeros(num_piece_classes)
-        type_counts = torch.zeros(num_piece_classes)
-        color_correct_hits = torch.zeros(num_piece_colors)
-        color_counts = torch.zeros(num_piece_colors)
+            tb_writer.add_figure(f'Evaluation on {state}, epoch {epoch_num}, eval iteration {i}',
+                                 plot_classes_preds(images, output_scores.cpu(), labels))
+            images.cpu()
 
-        for i, (image, type_label, color_label, is_piece) in enumerate(loader):
-            type_pred_probs, color_pred_probs = model(image)
-            type_pred = torch.argmax(type_pred_probs, axis=1)
-            color_pred = torch.argmax(color_pred_probs, axis=1)
+            class_labels = torch.argmax(labels, dim=1)
 
-            type_label = torch.argmax(type_label, axis=1)
-            color_label = torch.argmax(color_label, axis=1)
+            loss += loss_i.item()
+            for pred_i, label_i in zip(class_preds, class_labels):
+                confusion_matrix[label_i, pred_i] += 1
 
-            type_correct_hits[type_label] += (type_pred == type_label).to(torch.int64)
-            labels_count_per_class = torch.bincount(type_label)
-            type_counts[labels_count_per_class.nonzero()] += labels_count_per_class[labels_count_per_class.nonzero()]
+        loss /= len(loader)
+        class_counts = torch.sum(confusion_matrix, dim=1)
+        class_accuracy = torch.nan_to_num(torch.diag(confusion_matrix) / class_counts)
+        class_accuracy[class_accuracy == float("inf")] = 0
 
-            is_piece_idx = is_piece.nonzero()
-
-            if len(is_piece_idx) > 0:
-                color_correct_hits[color_label[is_piece_idx]] += \
-                    (color_pred[is_piece_idx] == color_label[is_piece_idx]).to(torch.int64)
-                color_count_per_class = torch.bincount(color_label)
-                color_counts[color_count_per_class.nonzero()] += color_count_per_class[color_count_per_class.nonzero()]
-
-        type_accuracy = torch.nan_to_num(type_correct_hits / type_counts)
-        color_accuracy = torch.nan_to_num(color_correct_hits / color_counts)
-
-        type_rates = type_counts / type_counts.sum()
-        color_rates = color_counts / color_counts.sum()
-        balanced_type_accuracy = type_accuracy @ type_rates
-        balanced_color_accuracy = color_accuracy @ color_rates
+        class_rates = class_counts / class_counts.sum()
+        balanced_class_accuracy = class_accuracy @ class_rates
 
         if log:
             log.info(f'\nResults over the {state} set\n')
-            for piece_type, piece_name in REVERSED_PIECE_TYPE.items():
-                log.info(f'Accuracy for {piece_name}: {type_accuracy[piece_type]:.3f}')
-
-            for piece_color, color_name in REVERSED_PIECE_COLOR.items():
-                log.info(f'Accuracy for {color_name}: {color_accuracy[piece_color]:.3f}')
+            for piece_class, piece_name in REVERSED_LABELS.items():
+                log.info(f'Accuracy for {piece_name}: {class_accuracy[piece_class]:.3f}')
 
             log.info('')
-            log.info(f'Balanced type accuracy: {balanced_type_accuracy.item():.3f}')
-            log.info(f'Balanced color accuracy: {balanced_color_accuracy.item():.3f}')
+            log.info(f'Balanced class accuracy on {state}: {balanced_class_accuracy.item():.3f}')
 
-        if tb_writer:
-            tb_writer.add_scalar('Balanced type accuracy on train', balanced_type_accuracy.item(), epoch_num)
-            tb_writer.add_scalar('Balanced color accuracy on train', balanced_color_accuracy.item(), epoch_num)
-            tb_writer.flush()
-
-        return balanced_type_accuracy, balanced_color_accuracy
+        return balanced_class_accuracy.item(), loss

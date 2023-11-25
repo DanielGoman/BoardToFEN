@@ -2,5 +2,4 @@
 in_channels: 3
 hidden_dim: 8
 out_channels: 16
-num_type_classes: 7
-num_color_classes: 2
+num_classes: 13

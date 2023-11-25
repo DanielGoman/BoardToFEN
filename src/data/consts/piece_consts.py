@@ -1,19 +1,15 @@
+LABELS = {'WP': 0,
+          'WR': 1,
+          'WN': 2,
+          'WB': 3,
+          'WQ': 4,
+          'WK': 5,
+          'BP': 6,
+          'BR': 7,
+          'BN': 8,
+          'BB': 9,
+          'BQ': 10,
+          'BK': 11,
+          'X': 12}
 
-NON_PIECE = 'X'
-
-PIECE_TYPE = {'P': 0,
-              'R': 1,
-              'N': 2,
-              'B': 3,
-              'Q': 4,
-              'K': 5,
-              NON_PIECE: 6}
-
-
-PIECE_COLOR = {'W': 0,
-               'B': 1,
-               NON_PIECE: 2}
-
-REVERSED_PIECE_TYPE = {val: key for key, val in PIECE_TYPE.items()}
-REVERSED_PIECE_COLOR = {val: key for key, val in PIECE_COLOR.items() if key != NON_PIECE}
-
+REVERSED_LABELS = {val: key for key, val in LABELS.items()}
