@@ -18,6 +18,7 @@ class GUI:
         self.active_color_canvas = self.make_active_color_canvas()
 
         # Create En-Passant selection dropdowns
+        self.dropdown_default_value = '-'
         self.square_options = {'file': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
                                'row': ['1', '2', '3', '4', '5', '6', '7', '8']}
         self.file_var, self.row_var = self.make_enpassant_dropdowns(self.square_options)
@@ -49,17 +50,17 @@ class GUI:
         canvas.itemconfig(bar_id, image=self.photo_images[self.current_color_index])
 
     def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]):
-        def reset_selections(_file_var, _row_var, _square_options):
-            _file_var.set(square_options['file'][0])
-            _row_var.set(square_options['row'][0])
+        def reset_selections(_file_var, _row_var):
+            _file_var.set(self.dropdown_default_value)
+            _row_var.set(self.dropdown_default_value)
 
         # Variables to store selected indices
         file_var = tk.StringVar(self.app)
         row_var = tk.StringVar(self.app)
 
         # Set default values
-        file_var.set(square_options['file'][0])
-        row_var.set(square_options['row'][0])
+        file_var.set(self.dropdown_default_value)
+        row_var.set(self.dropdown_default_value)
 
         # Create a Label
         label = tk.Label(self.app, text="En-passant:")
@@ -75,7 +76,7 @@ class GUI:
 
         # Create a Reset button
         reset_button = tk.Button(self.app, text="reset",
-                                 command=lambda: reset_selections(file_var, row_var, square_options))
+                                 command=lambda: reset_selections(file_var, row_var))
         reset_button.pack(pady=10, padx=10, side=tk.LEFT)
 
         # Create a Canvas
