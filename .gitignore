@@ -4,5 +4,4 @@ __pycache__/
 outputs/
 dataset/
 old_data/
-*.png
 progress_notes.docx
