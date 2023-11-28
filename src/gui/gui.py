@@ -1,4 +1,5 @@
 import tkinter as tk
+from tkinter import ttk
 from typing import List, Dict
 
 
@@ -22,6 +23,10 @@ class GUI:
         self.square_options = {'file': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
                                'row': ['1', '2', '3', '4', '5', '6', '7', '8']}
         self.file_var, self.row_var = self.make_enpassant_dropdowns(self.square_options)
+
+        # Create half-moves dropdown
+        self.halfmove_options = list(range(50))
+        self.n_halfmoves_var = self.make_halfmoves_dropdown(self.halfmove_options)
 
         self.app.mainloop()
 
@@ -54,6 +59,10 @@ class GUI:
             _file_var.set(self.dropdown_default_value)
             _row_var.set(self.dropdown_default_value)
 
+        # Create a Canvas
+        canvas = tk.Canvas(self.app, width=250, height=25)
+        canvas.pack(pady=5)
+
         # Variables to store selected indices
         file_var = tk.StringVar(self.app)
         row_var = tk.StringVar(self.app)
@@ -64,26 +73,61 @@ class GUI:
 
         # Create a Label
         label = tk.Label(self.app, text="En-passant:")
-        label.pack(pady=10, padx=10, side=tk.LEFT)
+        label.pack(pady=10, padx=10)
 
         # Create the first dropdown
-        dropdown1 = tk.OptionMenu(self.app, file_var, *square_options['file'])
-        dropdown1.pack(pady=10, padx=10, side=tk.LEFT)
+        file_dropdown = tk.OptionMenu(self.app, file_var, *square_options['file'])
+        file_dropdown.pack(pady=10, padx=10)
 
         # Create the second dropdown
-        dropdown2 = tk.OptionMenu(self.app, row_var, *square_options['row'])
-        dropdown2.pack(pady=10, padx=10, side=tk.LEFT)
+        row_dropdown = tk.OptionMenu(self.app, row_var, *square_options['row'])
+        row_dropdown.pack(pady=10, padx=10)
 
         # Create a Reset button
         reset_button = tk.Button(self.app, text="reset",
                                  command=lambda: reset_selections(file_var, row_var))
-        reset_button.pack(pady=10, padx=10, side=tk.LEFT)
+        reset_button.pack(pady=10, padx=10)
 
-        # Create a Canvas
-        canvas = tk.Canvas(self.app, width=200, height=150)
-        canvas.pack(pady=20)
+        canvas.create_window(25, 10, window=label)
+        canvas.create_window(100, 10, window=file_dropdown)
+        canvas.create_window(160, 10, window=row_dropdown)
+        canvas.create_window(230, 10, window=reset_button)
 
         return file_var, row_var
+
+    def make_halfmoves_dropdown(self, halfmove_options: List[int]):
+        def reset_selections(_halfmoves_var):
+            _halfmoves_var.set(self.dropdown_default_value)
+
+        # Create a Canvas
+        canvas = tk.Canvas(self.app, width=250, height=10)
+        canvas.pack(pady=5)
+
+        # Variables to store selected indices
+        halfmoves_var = tk.StringVar(self.app)
+
+        # Set default values
+        halfmoves_var.set(self.dropdown_default_value)
+
+        # Create a Label
+        label = tk.Label(self.app, text="Half-moves:")
+        label.pack(padx=10)
+
+        # Create the first dropdown
+        halfmoves_combobox = ttk.Combobox(self.app, textvariable=halfmoves_var, values=halfmove_options, height=5,
+                                          width=5, state="readonly")
+        halfmoves_combobox.pack(padx=10)
+
+        # Create a Reset button
+        reset_button = tk.Button(self.app, text="reset",
+                                 command=lambda: reset_selections(halfmoves_var))
+        reset_button.pack(padx=10)
+
+        canvas.create_window(25, 10, window=label)
+        canvas.create_window(130, 10, window=halfmoves_combobox)
+        canvas.create_window(230, 10, window=reset_button)
+
+        return halfmoves_var
 
 
 if __name__ == "__main__":
