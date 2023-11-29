@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List, Dict
 
+from src.fen_converter.consts import Domains
+
 
 class GUI:
     def __init__(self):
@@ -10,6 +12,11 @@ class GUI:
         self.active_color_image_paths = [r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\white_king.png',
                                          r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\black_king.png']
         self.screenshot_image_path = r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\screenshot.png'
+        self.domain_logos = {
+            Domains.chess.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\chess.com_icon.png',
+            Domains.lichess.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\lichess_logo.png',
+            Domains.pure_fen.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\copy_icon.png'
+        }
 
         self.app.title('Board2FEN')
         self.app.geometry("300x400")
@@ -37,6 +44,8 @@ class GUI:
         # Create full-move entry
         self.default_fullmoves = 0
         self.n_fullmoves_var = self.make_fullmoves_entry()
+
+        self.make_domain_buttons(self.domain_logos)
 
         self.app.mainloop()
 
@@ -209,6 +218,29 @@ class GUI:
         canvas.create_window(230, 10, window=reset_button)
 
         return entry_var
+
+    def make_domain_buttons(self, image_paths: Dict[int, str]):
+        domain_keys = list(image_paths.keys())
+        image_paths = list(image_paths.values())
+
+        # PhotoImage instances for the buttons
+        image_1 = tk.PhotoImage(file=image_paths[0]).subsample(2)
+        image_2 = tk.PhotoImage(file=image_paths[1]).subsample(2)
+        image_3 = tk.PhotoImage(file=image_paths[2]).subsample(2)
+
+        # Function to create a button with an image
+        def create_image_button(image, button_number):
+            button = tk.Button(self.app, image=image, command=lambda: self.on_domain_click(button_number))
+            button.image = image
+            button.pack(side=tk.LEFT, padx=(30, 30), pady=5)
+
+        # Create three buttons with images
+        create_image_button(image_1, domain_keys[0])
+        create_image_button(image_2, domain_keys[1])
+        create_image_button(image_3, domain_keys[2])
+
+    def on_domain_click(self, domain_number):
+        pass
 
 
 if __name__ == "__main__":
