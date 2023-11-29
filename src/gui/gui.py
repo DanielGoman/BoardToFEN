@@ -7,8 +7,9 @@ class GUI:
     def __init__(self):
         self.app = tk.Tk()
 
-        self.image_paths = [r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\white_king.png',
-                            r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\black_king.png']
+        self.active_color_image_paths = [r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\white_king.png',
+                                         r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\black_king.png']
+        self.screenshot_image_path = r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\screenshot.png'
 
         self.app.title('Board2FEN')
         self.app.geometry("300x300")
@@ -40,11 +41,24 @@ class GUI:
         canvas.pack(pady=20)
 
         # Load images
-        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in self.image_paths]
+        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in self.active_color_image_paths]
         self.photo_images = [image.subsample(2) for image in self.photo_images]
 
         # Load the first image and create an image on the canvas
         bar_id = canvas.create_image(50, 25, anchor=tk.CENTER, image=self.photo_images[0])
+
+        # Load screenshot image
+        screenshot_image = tk.PhotoImage(file=self.screenshot_image_path)
+        screenshot_image = screenshot_image.subsample(6)
+
+        # Make screenshot click popup message
+        popup_label = tk.Label(self.app, text="", bg="white", relief=tk.SOLID, borderwidth=1)
+        popup_label.place_forget()
+
+        # Make screenshot button
+        button = tk.Button(self.app, image=screenshot_image, command=lambda: self.on_screenshot_click(popup_label))
+        button.image = screenshot_image
+        button.place(x=220, y=25)  # Adjust the position as needed
 
         # Set up a click event to change the image
         canvas.tag_bind(bar_id, '<Button-1>', lambda event: self.change_image(canvas, bar_id))
@@ -57,6 +71,18 @@ class GUI:
 
         # Update the canvas
         canvas.itemconfig(bar_id, image=self.photo_images[self.current_color_index])
+
+    def show_popup(self, popup_label):
+        message = 'Take a screenshot!'
+        popup_label.config(text=message)
+        popup_label.place(x=(self.app.winfo_reqwidth() - popup_label.winfo_reqwidth()) // 2, y=10)
+
+        #  Hide the popup after 2000 milliseconds (2 seconds)
+        self.app.after(2000, lambda: popup_label.place_forget())
+
+    def on_screenshot_click(self, popup_label):
+        self.show_popup(popup_label)
+        pass
 
     def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]):
         def reset_selections(_file_var, _row_var):
