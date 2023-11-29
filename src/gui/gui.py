@@ -12,12 +12,17 @@ class GUI:
         self.screenshot_image_path = r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\screenshot.png'
 
         self.app.title('Board2FEN')
-        self.app.geometry("300x300")
+        self.app.geometry("300x400")
 
         # Create the active color button
         self.photo_images = None
         self.current_color_index = 0
         self.active_color_canvas = self.make_active_color_canvas()
+
+        # Create castling rights checkboxes
+        self.checkbox_texts = ['White king-side castle', 'White Queen-side castle',
+                               'Black king-side castle', 'Black Queen-side castle']
+        self.castling_rights_checkboxes = self.make_castling_availability_checkboxes(self.checkbox_texts)
 
         # Create En-Passant selection dropdowns
         self.dropdown_default_value = '-'
@@ -38,7 +43,7 @@ class GUI:
     def make_active_color_canvas(self):
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=300, height=50)
-        canvas.pack(pady=20)
+        canvas.pack(pady=(20, 5))
 
         # Load images
         self.photo_images = [tk.PhotoImage(file=image_path) for image_path in self.active_color_image_paths]
@@ -84,6 +89,18 @@ class GUI:
         self.show_popup(popup_label)
         pass
 
+    def make_castling_availability_checkboxes(self, checkbox_texts):
+        checkbox_vars = []
+        for i in range(4):
+            frame = tk.Frame(self.app)
+            frame.pack(side=tk.TOP, padx=5)  # Pack frames along the top
+
+            # Checkbutton
+            check_var = tk.BooleanVar()
+            checkbutton = tk.Checkbutton(frame, text=checkbox_texts[i], variable=check_var)
+            checkbutton.pack(side=tk.LEFT)
+            checkbox_vars.append(check_var)
+
     def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]):
         def reset_selections(_file_var, _row_var):
             _file_var.set(self.dropdown_default_value)
@@ -91,7 +108,7 @@ class GUI:
 
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=250, height=25)
-        canvas.pack()
+        canvas.pack(pady=(10, 0))
 
         # Variables to store selected indices
         file_var = tk.StringVar(self.app)
