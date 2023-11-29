@@ -101,6 +101,8 @@ class GUI:
             checkbutton.pack(side=tk.LEFT)
             checkbox_vars.append(check_var)
 
+        return checkbox_vars
+
     def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]):
         def reset_selections(_file_var, _row_var):
             _file_var.set(self.dropdown_default_value)
