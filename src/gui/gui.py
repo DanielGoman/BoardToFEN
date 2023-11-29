@@ -28,6 +28,10 @@ class GUI:
         self.halfmove_options = list(range(50))
         self.n_halfmoves_var = self.make_halfmoves_dropdown(self.halfmove_options)
 
+        # Create full-move entry
+        self.default_fullmoves = 0
+        self.n_fullmoves_var = self.make_fullmoves_entry()
+
         self.app.mainloop()
 
     def make_active_color_canvas(self):
@@ -61,7 +65,7 @@ class GUI:
 
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=250, height=25)
-        canvas.pack(pady=5)
+        canvas.pack()
 
         # Variables to store selected indices
         file_var = tk.StringVar(self.app)
@@ -73,7 +77,7 @@ class GUI:
 
         # Create a Label
         label = tk.Label(self.app, text="En-passant:")
-        label.pack(pady=10, padx=10)
+        label.pack(padx=10)
 
         # Create the first dropdown
         file_dropdown = tk.OptionMenu(self.app, file_var, *square_options['file'])
@@ -101,7 +105,7 @@ class GUI:
 
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=250, height=10)
-        canvas.pack(pady=5)
+        canvas.pack(pady=10)
 
         # Variables to store selected indices
         halfmoves_var = tk.StringVar(self.app)
@@ -111,7 +115,6 @@ class GUI:
 
         # Create a Label
         label = tk.Label(self.app, text="Half-moves:")
-        label.pack(padx=10)
 
         # Create the first dropdown
         halfmoves_combobox = ttk.Combobox(self.app, textvariable=halfmoves_var, values=halfmove_options, height=5,
@@ -128,6 +131,39 @@ class GUI:
         canvas.create_window(230, 10, window=reset_button)
 
         return halfmoves_var
+
+    def make_fullmoves_entry(self):
+        def validate_input(char):
+            # This function is called whenever a key is pressed
+            # It checks if the input is a digit or an empty string (allowing deletion)
+            return char.isdigit() or char == ""
+
+        def reset_entry(_entry_var):
+            _entry_var.set(str(self.default_fullmoves))
+
+        canvas = tk.Canvas(self.app, width=250, height=10)
+        canvas.pack(pady=10)
+
+        # Label to display text to the left of the Entry widget
+        label = tk.Label(self.app, text="Full-moves:")
+
+        entry_var = tk.StringVar()
+        entry_var.set(str(self.default_fullmoves))
+
+        # Entry widget with validation
+        entry = tk.Entry(self.app, textvariable=entry_var, validate="key",
+                         validatecommand=(self.app.register(validate_input), '%S'))
+
+        # Create a Reset button
+        reset_button = tk.Button(self.app, text="reset",
+                                 command=lambda: reset_entry(entry_var))
+        reset_button.pack(padx=10)
+
+        canvas.create_window(25, 10, window=label)
+        canvas.create_window(130, 10, window=entry)
+        canvas.create_window(230, 10, window=reset_button)
+
+        return entry_var
 
 
 if __name__ == "__main__":
