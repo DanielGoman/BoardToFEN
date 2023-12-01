@@ -1,10 +1,10 @@
 import tkinter as tk
+
 from tkinter import ttk
 from typing import List, Dict
 
-from omegaconf import DictConfig
-
-from src.fen_converter.consts import Domains
+from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
+from src.gui.consts import ActiveColor
 from src.pipeline.pipeline import Pipeline
 
 
@@ -12,6 +12,7 @@ class App:
     def __init__(self, pipeline: Pipeline, active_color_image_paths: str,
                  screenshot_image_path: str, domain_logo_paths: Dict[int, str]):
         self.pipeline = pipeline
+        self.board_rows_as_fen = None
 
         self.app = tk.Tk()
         self.app.title('Board2FEN')
@@ -93,7 +94,7 @@ class App:
 
     def on_screenshot_click(self, popup_label):
         self.show_popup(popup_label)
-        pass
+        self.board_rows_as_fen = self.pipeline.run_pipeline()
 
     def make_castling_availability_checkboxes(self, checkbox_texts):
         checkbox_vars = []
@@ -237,8 +238,17 @@ class App:
         create_image_button(image_3, domain_keys[2])
 
     def on_domain_click(self, domain_number):
-        pass
+        active_color = self.current_color_index == ActiveColor.White.value
+        castling_rights = [bool(checkbox_var.get()) for checkbox_var in self.castling_rights_checkboxes]
+        possible_en_passant = self.file_var.get() + self.row_var.get()
+        n_half_moves = None
+        n_full_moves = None
 
+        fen_parts = convert_board_pieces_to_fen(active_color=active_color, castling_rights=castling_rights,
+                                                possible_en_passant=possible_en_passant, n_half_moves=n_half_moves,
+                                                n_full_moves=n_full_moves)
+        fen_parts = [self.board_rows_as_fen, *fen_parts]
+        fen_url = convert_fen_to_url(fen_parts=fen_parts, domain=domain_number)
+        print(fen_url)
 
-if __name__ == "__main__":
-    App()
+        # ?
