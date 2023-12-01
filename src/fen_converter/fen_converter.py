@@ -9,7 +9,26 @@ from src.fen_converter.consts import ACTIVE_COLOR_MAPPING, CASTLING_RIGHTS_MAPPI
     DOMAINS_MAPPING
 
 
-def convert_board_pieces_to_fen(pieces: np.ndarray, active_color: bool, castling_rights: List[bool],
+def convert_pieces_to_fen(pieces: np.ndarray) -> List[str]:
+    """Converts piece prediction into list of strings - one per row, in FEN format
+
+    Args:
+        pieces: 1d array of the pieces as their numerical representation
+            (can be found in src/data/consts/pieces_consts.py)
+            Starts from the upper left corner of the board and moves right and downwards
+
+    Returns:
+        board_rows_as_fen: list of strings - one per row, in FEN format
+
+    """
+    # Part 1 - Board pieces
+    piece_rows = list(pieces.reshape((BOARD_SIDE_SIZE, BOARD_SIDE_SIZE)))
+    board_rows_as_fen = [convert_row_to_fen(row) for row in piece_rows]
+
+    return board_rows_as_fen
+
+
+def convert_board_pieces_to_fen(active_color: bool, castling_rights: List[bool],
                                 possible_en_passant: Union[str, None], n_half_moves: Union[int, None],
                                 n_full_moves: Union[int, None]) \
         -> List[str]:
@@ -18,9 +37,6 @@ def convert_board_pieces_to_fen(pieces: np.ndarray, active_color: bool, castling
     https://www.chess.com/terms/fen-chess
 
     Args:
-        pieces: 1d array of the pieces as their numerical representation
-                (can be found in src/data/consts/pieces_consts.py)
-                Starts from the upper left corner of the board and moves right and downwards
         active_color: the player whose turn to move [w, b]
         castling_rights: list of legally available castling options
                             [Q, q] - queen-side castle is available for white/black respectively
@@ -34,11 +50,6 @@ def convert_board_pieces_to_fen(pieces: np.ndarray, active_color: bool, castling
 
     """
     fen_parts = []
-
-    # Part 1 - Board pieces
-    piece_rows = list(pieces.reshape((BOARD_SIDE_SIZE, BOARD_SIDE_SIZE)))
-    board_rows_as_fen = [convert_row_to_fen(row) for row in piece_rows]
-    fen_parts.append(board_rows_as_fen)
 
     # Part 2 - Active color
     fen_parts.append(ACTIVE_COLOR_MAPPING[active_color])
