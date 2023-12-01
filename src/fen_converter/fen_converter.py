@@ -29,8 +29,8 @@ def convert_pieces_to_fen(pieces: np.ndarray) -> List[str]:
 
 
 def convert_board_pieces_to_fen(active_color: bool, castling_rights: List[bool],
-                                possible_en_passant: Union[str, None], n_half_moves: Union[int, None],
-                                n_full_moves: Union[int, None]) \
+                                possible_en_passant: Union[str, None], n_half_moves: Union[str, None],
+                                n_full_moves: Union[str, None]) \
         -> List[str]:
     """Converts the predicted pieces, in addition to the other FEN-relevant parameters into a FEN
     This is implemented according to the following chess.com article:

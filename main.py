@@ -10,7 +10,7 @@ from consts import INFERENCE_CONFIG_PATH, INFERENCE_CONFIG_FILE_NAME
 
 @hydra.main(config_path=INFERENCE_CONFIG_PATH, config_name=INFERENCE_CONFIG_FILE_NAME, version_base='1.2')
 def main(config: DictConfig):
-    domain_logo_paths = {Domains[domain_name]: domain_logo_path for domain_name, domain_logo_path in
+    domain_logo_paths = {Domains[domain_name].value: domain_logo_path for domain_name, domain_logo_path in
                          config.paths.app_paths.domain_logos.items()}
 
     pipeline = Pipeline(model_path=config.paths.final_model_path,

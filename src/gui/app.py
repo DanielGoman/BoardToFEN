@@ -9,7 +9,7 @@ from src.pipeline.pipeline import Pipeline
 
 
 class App:
-    def __init__(self, pipeline: Pipeline, active_color_image_paths: str,
+    def __init__(self, pipeline: Pipeline, active_color_image_paths: Dict[str, str],
                  screenshot_image_path: str, domain_logo_paths: Dict[int, str]):
         self.pipeline = pipeline
         self.board_rows_as_fen = None
@@ -21,7 +21,8 @@ class App:
         # Create the active color button
         self.photo_images = None
         self.current_color_index = 0
-        self.active_color_canvas = self.make_active_color_canvas(active_color_image_paths, screenshot_image_path)
+        self.active_color_canvas = self.make_active_color_canvas(active_color_image_paths,
+                                                                 screenshot_image_path)
 
         # Create castling rights checkboxes
         self.checkbox_texts = ['White king-side castle', 'White Queen-side castle',
@@ -29,7 +30,7 @@ class App:
         self.castling_rights_checkboxes = self.make_castling_availability_checkboxes(self.checkbox_texts)
 
         # Create En-Passant selection dropdowns
-        self.dropdown_default_value = '-'
+        self.default_value = '-'
         self.square_options = {'file': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
                                'row': ['1', '2', '3', '4', '5', '6', '7', '8']}
         self.file_var, self.row_var = self.make_enpassant_dropdowns(self.square_options)
@@ -47,13 +48,13 @@ class App:
     def start_app(self):
         self.app.mainloop()
 
-    def make_active_color_canvas(self, active_color_image_paths: str, screenshot_image_path: str):
+    def make_active_color_canvas(self, active_color_image_paths: Dict[str, str], screenshot_image_path: str):
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=300, height=50)
         canvas.pack(pady=(20, 5))
 
         # Load images
-        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in active_color_image_paths]
+        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in active_color_image_paths.values()]
         self.photo_images = [image.subsample(2) for image in self.photo_images]
 
         # Load the first image and create an image on the canvas
@@ -112,8 +113,8 @@ class App:
 
     def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]):
         def reset_selections(_file_var, _row_var):
-            _file_var.set(self.dropdown_default_value)
-            _row_var.set(self.dropdown_default_value)
+            _file_var.set(self.default_value)
+            _row_var.set(self.default_value)
 
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=250, height=25)
@@ -124,8 +125,8 @@ class App:
         row_var = tk.StringVar(self.app)
 
         # Set default values
-        file_var.set(self.dropdown_default_value)
-        row_var.set(self.dropdown_default_value)
+        file_var.set(self.default_value)
+        row_var.set(self.default_value)
 
         # Create a Label
         label = tk.Label(self.app, text="En-passant:")
@@ -153,7 +154,7 @@ class App:
 
     def make_halfmoves_dropdown(self, halfmove_options: List[int]):
         def reset_selections(_halfmoves_var):
-            _halfmoves_var.set(self.dropdown_default_value)
+            _halfmoves_var.set(self.default_value)
 
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=250, height=10)
@@ -163,7 +164,7 @@ class App:
         halfmoves_var = tk.StringVar(self.app)
 
         # Set default values
-        halfmoves_var.set(self.dropdown_default_value)
+        halfmoves_var.set(self.default_value)
 
         # Create a Label
         label = tk.Label(self.app, text="Half-moves:")
@@ -242,13 +243,13 @@ class App:
 
         castling_rights = [bool(checkbox_var.get()) for checkbox_var in self.castling_rights_checkboxes]
 
-        if self.file_var.get() != self.dropdown_default_value and self.row_var != self.dropdown_default_value:
+        if self.file_var.get() != self.default_value and self.row_var != self.default_value:
             possible_en_passant = self.file_var.get() + self.row_var.get()
         else:
             possible_en_passant = None
 
-        n_half_moves = None
-        n_full_moves = None
+        n_half_moves = self.n_halfmoves_var.get() if self.n_halfmoves_var.get() != self.default_value else 0
+        n_full_moves = self.n_fullmoves_var.get()
 
         fen_parts = convert_board_pieces_to_fen(active_color=active_color, castling_rights=castling_rights,
                                                 possible_en_passant=possible_en_passant, n_half_moves=n_half_moves,
