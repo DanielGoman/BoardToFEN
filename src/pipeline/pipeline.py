@@ -25,9 +25,7 @@ class Pipeline:
         pieces_batch = PiecesDataset.board_squares_to_pieces_dataset(board_squares, self.transforms)
         predicted_labels = self.model.inference(pieces_batch)
 
-        # Display FEN UI
-
-        # Convert predictions into FEN format
+        return predicted_labels
 
 
 

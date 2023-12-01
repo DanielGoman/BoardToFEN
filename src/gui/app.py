@@ -2,29 +2,25 @@ import tkinter as tk
 from tkinter import ttk
 from typing import List, Dict
 
+from omegaconf import DictConfig
+
 from src.fen_converter.consts import Domains
+from src.pipeline.pipeline import Pipeline
 
 
-class GUI:
-    def __init__(self):
+class App:
+    def __init__(self, pipeline: Pipeline, active_color_image_paths: str,
+                 screenshot_image_path: str, domain_logo_paths: Dict[int, str]):
+        self.pipeline = pipeline
+
         self.app = tk.Tk()
-
-        self.active_color_image_paths = [r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\white_king.png',
-                                         r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\black_king.png']
-        self.screenshot_image_path = r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\screenshot.png'
-        self.domain_logos = {
-            Domains.chess.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\chess.com_icon.png',
-            Domains.lichess.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\lichess_logo.png',
-            Domains.pure_fen.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\copy_icon.png'
-        }
-
         self.app.title('Board2FEN')
         self.app.geometry("300x400")
 
         # Create the active color button
         self.photo_images = None
         self.current_color_index = 0
-        self.active_color_canvas = self.make_active_color_canvas()
+        self.active_color_canvas = self.make_active_color_canvas(active_color_image_paths, screenshot_image_path)
 
         # Create castling rights checkboxes
         self.checkbox_texts = ['White king-side castle', 'White Queen-side castle',
@@ -45,24 +41,25 @@ class GUI:
         self.default_fullmoves = 0
         self.n_fullmoves_var = self.make_fullmoves_entry()
 
-        self.make_domain_buttons(self.domain_logos)
+        self.make_domain_buttons(domain_logo_paths)
 
+    def start_app(self):
         self.app.mainloop()
 
-    def make_active_color_canvas(self):
+    def make_active_color_canvas(self, active_color_image_paths: str, screenshot_image_path: str):
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=300, height=50)
         canvas.pack(pady=(20, 5))
 
         # Load images
-        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in self.active_color_image_paths]
+        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in active_color_image_paths]
         self.photo_images = [image.subsample(2) for image in self.photo_images]
 
         # Load the first image and create an image on the canvas
         bar_id = canvas.create_image(50, 25, anchor=tk.CENTER, image=self.photo_images[0])
 
         # Load screenshot image
-        screenshot_image = tk.PhotoImage(file=self.screenshot_image_path)
+        screenshot_image = tk.PhotoImage(file=screenshot_image_path)
         screenshot_image = screenshot_image.subsample(6)
 
         # Make screenshot click popup message
@@ -244,4 +241,4 @@ class GUI:
 
 
 if __name__ == "__main__":
-    GUI()
+    App()

@@ -1,1 +1,11 @@
 final_model_path: final_model/model.pkl
+
+app_paths:
+  active_color_image_paths:
+    white: C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\white_king.png
+    black: C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\black_king.png
+  screenshot_image_path: C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\screenshot.png
+  domain_logos:
+    chess: C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\chess.com_icon.png
+    lichess: C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\lichess_logo.png
+    pure_fen: C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\copy_icon.png
