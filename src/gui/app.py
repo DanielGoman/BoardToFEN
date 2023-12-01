@@ -239,8 +239,14 @@ class App:
 
     def on_domain_click(self, domain_number):
         active_color = self.current_color_index == ActiveColor.White.value
+
         castling_rights = [bool(checkbox_var.get()) for checkbox_var in self.castling_rights_checkboxes]
-        possible_en_passant = self.file_var.get() + self.row_var.get()
+
+        if self.file_var.get() != self.dropdown_default_value and self.row_var != self.dropdown_default_value:
+            possible_en_passant = self.file_var.get() + self.row_var.get()
+        else:
+            possible_en_passant = None
+
         n_half_moves = None
         n_full_moves = None
 
