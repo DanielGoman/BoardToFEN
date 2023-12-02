@@ -14,7 +14,8 @@ def main(config: DictConfig):
                          config.paths.app_paths.domain_logos.items()}
 
     pipeline = Pipeline(model_path=config.paths.final_model_path,
-                        transforms=config.transforms)
+                        transforms=config.transforms,
+                        model_params=config.model_params)
 
     app = App(pipeline=pipeline,
               active_color_image_paths=config.paths.app_paths.active_color_image_paths,

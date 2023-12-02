@@ -1,4 +1,4 @@
-final_model_path: final_model/model.pkl
+final_model_path: final_model/model.pt
 
 app_paths:
   active_color_image_paths:
