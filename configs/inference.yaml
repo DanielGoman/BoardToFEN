@@ -2,6 +2,7 @@ defaults:
   - _self_
   - transforms: inference_transforms.yaml
   - paths: inference_paths.yaml
+  - model_params: model_params.yaml
 
 hydra:
   job_logging:

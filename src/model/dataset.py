@@ -126,7 +126,7 @@ class PiecesDataset(Dataset):
             transforms = torchvision.transforms.Compose(transforms)
             squares = [transforms(image) for image in squares_pil_images]
 
-        squares_tensor = torch.Tensor(squares)
+        squares_tensor = torch.stack(squares)
         return squares_tensor
 
     def __len__(self):

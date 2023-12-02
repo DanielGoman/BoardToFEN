@@ -163,18 +163,17 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
 
     log.info('Finished training\n')
 
-    log.info(f'Saving model to {model_path}')
-    run_model_path = os.path.join(current_run_path, model_path)
-    model_dir_path = os.path.dirname(run_model_path)
-    if not os.path.exists(model_dir_path):
-        os.mkdir(model_dir_path)
-
-    model_scripted = torch.jit.script(model)
-    model_scripted.save(run_model_path)
-
     if not is_minibatch:
         eval_model(model=model, criterion=criterion, loader=val_loader,
                    device=device, state='val', log=log, tb_writer=tb_writer)
+
+    model_dir_path = os.path.join(current_run_path, os.path.dirname(model_path))
+    if not os.path.exists(model_dir_path):
+        os.mkdir(model_dir_path)
+
+    torch_model_path = os.path.join(current_run_path, model_path)
+    log.info(f'Saving model to {torch_model_path}')
+    torch.save(model.state_dict(), torch_model_path)
 
     tb_writer.close()
 

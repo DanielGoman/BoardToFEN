@@ -48,7 +48,7 @@ class PieceClassifier(nn.Module):
 
         """
         class_scores = self.forward(x)
-        class_preds = torch.argmax(torch.softmax(class_scores, dim=1), dim=1).cpu().to(torch.int8)
+        class_preds = torch.argmax(torch.softmax(class_scores, dim=1), dim=1).cpu().to(torch.int8).numpy()
 
         return class_preds
 

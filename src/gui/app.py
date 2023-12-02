@@ -1,30 +1,28 @@
 import tkinter as tk
+
 from tkinter import ttk
 from typing import List, Dict
 
-from src.fen_converter.consts import Domains
+from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
+from src.gui.consts import ActiveColor
+from src.pipeline.pipeline import Pipeline
 
 
-class GUI:
-    def __init__(self):
+class App:
+    def __init__(self, pipeline: Pipeline, active_color_image_paths: Dict[str, str],
+                 screenshot_image_path: str, domain_logo_paths: Dict[int, str]):
+        self.pipeline = pipeline
+        self.board_rows_as_fen = None
+
         self.app = tk.Tk()
-
-        self.active_color_image_paths = [r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\white_king.png',
-                                         r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\black_king.png']
-        self.screenshot_image_path = r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\screenshot.png'
-        self.domain_logos = {
-            Domains.chess.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\chess.com_icon.png',
-            Domains.lichess.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\lichess_logo.png',
-            Domains.pure_fen.value: r'C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\images\copy_icon.png'
-        }
-
         self.app.title('Board2FEN')
         self.app.geometry("300x400")
 
         # Create the active color button
         self.photo_images = None
         self.current_color_index = 0
-        self.active_color_canvas = self.make_active_color_canvas()
+        self.active_color_canvas = self.make_active_color_canvas(active_color_image_paths,
+                                                                 screenshot_image_path)
 
         # Create castling rights checkboxes
         self.checkbox_texts = ['White king-side castle', 'White Queen-side castle',
@@ -32,7 +30,7 @@ class GUI:
         self.castling_rights_checkboxes = self.make_castling_availability_checkboxes(self.checkbox_texts)
 
         # Create En-Passant selection dropdowns
-        self.dropdown_default_value = '-'
+        self.default_value = '-'
         self.square_options = {'file': ['a', 'b', 'c', 'd', 'e', 'f', 'g'],
                                'row': ['1', '2', '3', '4', '5', '6', '7', '8']}
         self.file_var, self.row_var = self.make_enpassant_dropdowns(self.square_options)
@@ -45,24 +43,25 @@ class GUI:
         self.default_fullmoves = 0
         self.n_fullmoves_var = self.make_fullmoves_entry()
 
-        self.make_domain_buttons(self.domain_logos)
+        self.make_domain_buttons(domain_logo_paths)
 
+    def start_app(self):
         self.app.mainloop()
 
-    def make_active_color_canvas(self):
+    def make_active_color_canvas(self, active_color_image_paths: Dict[str, str], screenshot_image_path: str):
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=300, height=50)
         canvas.pack(pady=(20, 5))
 
         # Load images
-        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in self.active_color_image_paths]
+        self.photo_images = [tk.PhotoImage(file=image_path) for image_path in active_color_image_paths.values()]
         self.photo_images = [image.subsample(2) for image in self.photo_images]
 
         # Load the first image and create an image on the canvas
         bar_id = canvas.create_image(50, 25, anchor=tk.CENTER, image=self.photo_images[0])
 
         # Load screenshot image
-        screenshot_image = tk.PhotoImage(file=self.screenshot_image_path)
+        screenshot_image = tk.PhotoImage(file=screenshot_image_path)
         screenshot_image = screenshot_image.subsample(6)
 
         # Make screenshot click popup message
@@ -96,7 +95,7 @@ class GUI:
 
     def on_screenshot_click(self, popup_label):
         self.show_popup(popup_label)
-        pass
+        self.board_rows_as_fen = self.pipeline.run_pipeline()
 
     def make_castling_availability_checkboxes(self, checkbox_texts):
         checkbox_vars = []
@@ -114,8 +113,8 @@ class GUI:
 
     def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]):
         def reset_selections(_file_var, _row_var):
-            _file_var.set(self.dropdown_default_value)
-            _row_var.set(self.dropdown_default_value)
+            _file_var.set(self.default_value)
+            _row_var.set(self.default_value)
 
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=250, height=25)
@@ -126,8 +125,8 @@ class GUI:
         row_var = tk.StringVar(self.app)
 
         # Set default values
-        file_var.set(self.dropdown_default_value)
-        row_var.set(self.dropdown_default_value)
+        file_var.set(self.default_value)
+        row_var.set(self.default_value)
 
         # Create a Label
         label = tk.Label(self.app, text="En-passant:")
@@ -155,7 +154,7 @@ class GUI:
 
     def make_halfmoves_dropdown(self, halfmove_options: List[int]):
         def reset_selections(_halfmoves_var):
-            _halfmoves_var.set(self.dropdown_default_value)
+            _halfmoves_var.set(self.default_value)
 
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=250, height=10)
@@ -165,7 +164,7 @@ class GUI:
         halfmoves_var = tk.StringVar(self.app)
 
         # Set default values
-        halfmoves_var.set(self.dropdown_default_value)
+        halfmoves_var.set(self.default_value)
 
         # Create a Label
         label = tk.Label(self.app, text="Half-moves:")
@@ -240,8 +239,23 @@ class GUI:
         create_image_button(image_3, domain_keys[2])
 
     def on_domain_click(self, domain_number):
-        pass
+        active_color = self.current_color_index == ActiveColor.White.value
 
+        castling_rights = [bool(checkbox_var.get()) for checkbox_var in self.castling_rights_checkboxes]
 
-if __name__ == "__main__":
-    GUI()
+        if self.file_var.get() != self.default_value and self.row_var != self.default_value:
+            possible_en_passant = self.file_var.get() + self.row_var.get()
+        else:
+            possible_en_passant = None
+
+        n_half_moves = self.n_halfmoves_var.get() if self.n_halfmoves_var.get() != self.default_value else 0
+        n_full_moves = self.n_fullmoves_var.get()
+
+        fen_parts = convert_board_pieces_to_fen(active_color=active_color, castling_rights=castling_rights,
+                                                possible_en_passant=possible_en_passant, n_half_moves=n_half_moves,
+                                                n_full_moves=n_full_moves)
+        fen_parts = [self.board_rows_as_fen, *fen_parts]
+        fen_url = convert_fen_to_url(fen_parts=fen_parts, domain=domain_number)
+        print(fen_url)
+
+        # ?

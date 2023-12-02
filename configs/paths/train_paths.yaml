@@ -5,7 +5,7 @@ data_paths:
   val_json_path: ../../dataset/labels/val_labels.json
 
 model_paths:
-  model_path: saved_model/model.pkl
+  model_path: saved_model/model.pt
 
 plot_paths:
   plot_dirname: plots
