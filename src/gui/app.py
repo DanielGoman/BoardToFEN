@@ -4,6 +4,7 @@ from tkinter import ttk
 from typing import List, Dict
 
 from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
+from src.gui.app_utils import gui_to_fen_parameters
 from src.gui.consts import ActiveColor
 from src.pipeline.pipeline import Pipeline
 
@@ -84,11 +85,6 @@ class App:
 
         # Update the canvas
         canvas.itemconfig(bar_id, image=self.photo_images[self.current_color_index])
-
-    def on_screenshot_click(self):
-        self.app.iconify()
-        self.board_rows_as_fen = self.pipeline.run_pipeline()
-        self.app.deiconify()
 
     def make_castling_availability_checkboxes(self, checkbox_texts):
         checkbox_vars = []
@@ -231,24 +227,20 @@ class App:
         create_image_button(image_2, domain_keys[1])
         create_image_button(image_3, domain_keys[2])
 
+    def on_screenshot_click(self):
+        self.app.iconify()
+        self.board_rows_as_fen = self.pipeline.run_pipeline()
+        self.app.deiconify()
+
     def on_domain_click(self, domain_number):
-        active_color = self.current_color_index == ActiveColor.White.value
+        fen_url = gui_to_fen_parameters(board_rows_as_fen=self.board_rows_as_fen,
+                                        current_color_index=self.current_color_index,
+                                        castling_rights_checkboxes=self.castling_rights_checkboxes,
+                                        file_var=self.file_var,
+                                        row_var=self.row_var, default_value=self.default_value,
+                                        n_halfmoves_var=self.n_halfmoves_var, n_fullmoves_var=self.n_fullmoves_var,
+                                        domain_number=domain_number)
 
-        castling_rights = [bool(checkbox_var.get()) for checkbox_var in self.castling_rights_checkboxes]
-
-        if self.file_var.get() != self.default_value and self.row_var != self.default_value:
-            possible_en_passant = self.file_var.get() + self.row_var.get()
-        else:
-            possible_en_passant = None
-
-        n_half_moves = self.n_halfmoves_var.get() if self.n_halfmoves_var.get() != self.default_value else 0
-        n_full_moves = self.n_fullmoves_var.get()
-
-        fen_parts = convert_board_pieces_to_fen(active_color=active_color, castling_rights=castling_rights,
-                                                possible_en_passant=possible_en_passant, n_half_moves=n_half_moves,
-                                                n_full_moves=n_full_moves)
-        fen_parts = [self.board_rows_as_fen, *fen_parts]
-        fen_url = convert_fen_to_url(fen_parts=fen_parts, domain=domain_number)
         print(fen_url)
 
         # ?
