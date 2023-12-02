@@ -1,14 +1,32 @@
-from tkinter import BooleanVar, StringVar
 from typing import List
+from tkinter import BooleanVar, StringVar
 
-from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
 from src.gui.consts import ActiveColor
+from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
 
 
 def gui_to_fen_parameters(board_rows_as_fen: List[str], current_color_index: int,
                           castling_rights_checkboxes: List[BooleanVar], file_var: StringVar, row_var: StringVar,
                           n_halfmoves_var: StringVar, n_fullmoves_var: StringVar, domain_number: int,
                           default_value: str) -> str:
+    """Takes all parameters from the GUI and combines them with the already generated partial FEN from the screenshot
+    to create a full FEN for the requested domain
+
+    Args:
+        board_rows_as_fen: list of strings - one per row, in FEN format
+        current_color_index: index of the currently selected active color
+        castling_rights_checkboxes: vars containing the status of each castling rights button
+        file_var: variable containing the currently specified en-passant file
+        row_var: variable containing the currently specified en-passant row
+        n_halfmoves_var: variable containing the currently specified number of the halfmoves dropdown
+        n_fullmoves_var: variable contains the currently specified number of full moves
+        domain_number: the number of domain to generate FEN for
+        default_value: default value in dropdowns
+
+    Returns:
+        fen_url: full FEN url for the requested domain
+
+    """
     active_color = current_color_index == ActiveColor.White.value
 
     castling_rights = [bool(checkbox_var.get()) for checkbox_var in castling_rights_checkboxes]

@@ -1,7 +1,7 @@
 import tkinter as tk
 
 from tkinter import ttk
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
 from src.gui.app_utils import gui_to_fen_parameters
@@ -10,6 +10,17 @@ from src.pipeline.pipeline import Pipeline
 
 
 class App:
+    """This class manages the interactions of the user with the software.
+    A simple GUI is displayed for the user, that allow them to screenshot their board and convert it to a FEN,
+    including various board parameters that can't be deduced simply from the board position, such as:
+        - Active color
+        - Castling rights
+        - Available en-passant
+        - Number of half moves (number of moves made since the last pawn move/piece capture, capped at 50)
+        - Number of full moves (number of moves made in the game)
+
+    """
+
     def __init__(self, pipeline: Pipeline, active_color_image_paths: Dict[str, str],
                  screenshot_image_path: str, domain_logo_paths: Dict[int, str]):
         self.pipeline = pipeline
@@ -22,8 +33,7 @@ class App:
         # Create the active color button
         self.photo_images = None
         self.current_color_index = 0
-        self.active_color_canvas = self.make_active_color_canvas(active_color_image_paths,
-                                                                 screenshot_image_path)
+        self.make_active_color_button_and_screen_shot_button(active_color_image_paths, screenshot_image_path)
 
         # Create castling rights checkboxes
         self.checkbox_texts = ['White king-side castle', 'White Queen-side castle',
@@ -49,7 +59,15 @@ class App:
     def start_app(self):
         self.app.mainloop()
 
-    def make_active_color_canvas(self, active_color_image_paths: Dict[str, str], screenshot_image_path: str):
+    def make_active_color_button_and_screen_shot_button(self, active_color_image_paths: Dict[str, str],
+                                                        screenshot_image_path: str):
+        """Creates the button which accepts from the user the current active color, as well as the screenshot button
+
+        Args:
+            active_color_image_paths: paths to images of each color
+            screenshot_image_path: path to the image of the screenshot button
+
+        """
         # Create a Canvas
         canvas = tk.Canvas(self.app, width=300, height=50)
         canvas.pack(pady=(20, 5))
@@ -79,15 +97,35 @@ class App:
 
         return canvas
 
-    def change_image(self, canvas, bar_id):
+    def change_image(self, canvas: tk.Canvas, bar_id: int):
+        """Changes the image of the active color button when clicked
+
+        Args:
+            canvas: canvas on which the image is displayed
+            bar_id: id of the button
+
+        """
         # Update the index to get the next image in the list
         self.current_color_index = (self.current_color_index + 1) % len(self.photo_images)
 
         # Update the canvas
         canvas.itemconfig(bar_id, image=self.photo_images[self.current_color_index])
 
-    def make_castling_availability_checkboxes(self, checkbox_texts):
-        checkbox_vars = []
+    def make_castling_availability_checkboxes(self, checkbox_texts: List[str]) -> List[tk.BooleanVar]:
+        """Creates four castling rights checkboxes:
+            - White king-side
+            - White queen-sie
+            - Black king-side
+            - Black queen-side
+
+        Args:
+            checkbox_texts: the strings displayed along each checkbox
+
+        Returns:
+            castling_rights_checkboxes: vars containing the status of each castling rights button
+
+        """
+        castling_rights_checkboxes = []
         for i in range(4):
             frame = tk.Frame(self.app)
             frame.pack(side=tk.TOP, padx=5)  # Pack frames along the top
@@ -96,11 +134,21 @@ class App:
             check_var = tk.BooleanVar()
             checkbutton = tk.Checkbutton(frame, text=checkbox_texts[i], variable=check_var)
             checkbutton.pack(side=tk.LEFT)
-            checkbox_vars.append(check_var)
+            castling_rights_checkboxes.append(check_var)
 
-        return checkbox_vars
+        return castling_rights_checkboxes
 
-    def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]):
+    def make_enpassant_dropdowns(self, square_options: Dict[str, List[str]]) -> Tuple[tk.StringVar, tk.StringVar]:
+        """Creates en-passant dropdowns, one for the rows, and one for the columns
+
+        Args:
+            square_options: dict of available options to display per dropdown
+
+        Returns:
+            file_var: variable containing the currently specified en-passant file
+            row_var: variable containing the currently specified en-passant row
+
+        """
         def reset_selections(_file_var, _row_var):
             _file_var.set(self.default_value)
             _row_var.set(self.default_value)
@@ -142,6 +190,15 @@ class App:
         return file_var, row_var
 
     def make_halfmoves_dropdown(self, halfmove_options: List[int]):
+        """Creates the half moves dropdown
+
+        Args:
+            halfmove_options: list of available options to display in the dropdown
+
+        Returns:
+            halfmoves_var: variable containing the currently specified number of the halfmoves dropdown
+
+        """
         def reset_selections(_halfmoves_var):
             _halfmoves_var.set(self.default_value)
 
@@ -175,6 +232,12 @@ class App:
         return halfmoves_var
 
     def make_fullmoves_entry(self):
+        """Creates a full moves entry (digits only)
+
+        Returns:
+            fullmoves_entry_var: variable contains the currently specified number of full moves
+
+        """
         def validate_input(char):
             # This function is called whenever a key is pressed
             # It checks if the input is a digit or an empty string (allowing deletion)
@@ -189,25 +252,31 @@ class App:
         # Label to display text to the left of the Entry widget
         label = tk.Label(self.app, text="Full-moves:")
 
-        entry_var = tk.StringVar()
-        entry_var.set(str(self.default_fullmoves))
+        fullmoves_entry_var = tk.StringVar()
+        fullmoves_entry_var.set(str(self.default_fullmoves))
 
         # Entry widget with validation
-        entry = tk.Entry(self.app, textvariable=entry_var, validate="key",
+        entry = tk.Entry(self.app, textvariable=fullmoves_entry_var, validate="key",
                          validatecommand=(self.app.register(validate_input), '%S'))
 
         # Create a Reset button
         reset_button = tk.Button(self.app, text="reset",
-                                 command=lambda: reset_entry(entry_var))
+                                 command=lambda: reset_entry(fullmoves_entry_var))
         reset_button.pack(padx=10)
 
         canvas.create_window(25, 10, window=label)
         canvas.create_window(130, 10, window=entry)
         canvas.create_window(230, 10, window=reset_button)
 
-        return entry_var
+        return fullmoves_entry_var
 
     def make_domain_buttons(self, image_paths: Dict[int, str]):
+        """Creates the domain buttons
+
+        Args:
+            image_paths: paths to images of each domain
+
+        """
         domain_keys = list(image_paths.keys())
         image_paths = list(image_paths.values())
 
@@ -228,11 +297,20 @@ class App:
         create_image_button(image_3, domain_keys[2])
 
     def on_screenshot_click(self):
+        """Lets the user take a screenshot, and converts the board in the screenshot to FEN format
+
+        """
         self.app.iconify()
         self.board_rows_as_fen = self.pipeline.run_pipeline()
         self.app.deiconify()
 
-    def on_domain_click(self, domain_number):
+    def on_domain_click(self, domain_number: int):
+        """Converts FEN parameters to a full fen w.r.t the type of domain required
+
+        Args:
+            domain_number: the type of domain to create the fen for
+
+        """
         fen_url = gui_to_fen_parameters(board_rows_as_fen=self.board_rows_as_fen,
                                         current_color_index=self.current_color_index,
                                         castling_rights_checkboxes=self.castling_rights_checkboxes,
@@ -242,5 +320,4 @@ class App:
                                         domain_number=domain_number)
 
         print(fen_url)
-
         # ?
