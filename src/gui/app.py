@@ -69,7 +69,7 @@ class App:
         popup_label.place_forget()
 
         # Make screenshot button
-        button = tk.Button(self.app, image=screenshot_image, command=lambda: self.on_screenshot_click(popup_label))
+        button = tk.Button(self.app, image=screenshot_image, command=self.on_screenshot_click)
         button.image = screenshot_image
         button.place(x=220, y=25)  # Adjust the position as needed
 
@@ -85,17 +85,10 @@ class App:
         # Update the canvas
         canvas.itemconfig(bar_id, image=self.photo_images[self.current_color_index])
 
-    def show_popup(self, popup_label):
-        message = 'Take a screenshot!'
-        popup_label.config(text=message)
-        popup_label.place(x=(self.app.winfo_reqwidth() - popup_label.winfo_reqwidth()) // 2, y=10)
-
-        #  Hide the popup after 2000 milliseconds (2 seconds)
-        self.app.after(2000, lambda: popup_label.place_forget())
-
-    def on_screenshot_click(self, popup_label):
-        self.show_popup(popup_label)
+    def on_screenshot_click(self):
+        self.app.iconify()
         self.board_rows_as_fen = self.pipeline.run_pipeline()
+        self.app.deiconify()
 
     def make_castling_availability_checkboxes(self, checkbox_texts):
         checkbox_vars = []
