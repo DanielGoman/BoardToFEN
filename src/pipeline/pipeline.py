@@ -1,6 +1,6 @@
 import torch
 
-from typing import List
+from typing import List, Optional
 from omegaconf import DictConfig
 
 from src.board_utils.board import parse_board
@@ -28,7 +28,7 @@ class Pipeline:
         self.model.load_state_dict(torch.load(model_path))
         self.transforms = parse_config_transforms(transforms)
 
-    def run_pipeline(self) -> List[str]:
+    def run_pipeline(self) -> Optional[List[str]]:
         """Runs the majority of the pipeline, this includes:
             - Screenshotting
             - Conversion of the screenshot to squares of the board
@@ -45,6 +45,8 @@ class Pipeline:
 
         # Convert the frame into a dict of squares
         board_squares = parse_board(image)
+        if board_squares is None:
+            return
 
         # Predict the label of each square
         pieces_batch = PiecesDataset.board_squares_to_pieces_dataset(board_squares, self.transforms)
