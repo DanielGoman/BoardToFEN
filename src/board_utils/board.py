@@ -10,40 +10,6 @@ from src.board_utils.consts import Canny
 from src.data.consts.squares_consts import BOARD_SIDE_SIZE
 
 
-#TODO: Remove Board if it's deprecated
-class Board:
-    def __init__(self, board_template_path):
-        self.sift_feature_extractor = cv2.SIFT_create()
-        self.board_frame, self.board_keypoints, self.board_descriptors = self.get_descriptors(path=board_template_path)
-        self.matcher = cv2.BFMatcher(cv2.NORM_L1, crossCheck=True)
-
-    def convert_to_fen(self, frame: np.ndarray):
-        _, key_points, descriptors = self.get_descriptors(frame=frame)
-
-        matches = self.matcher.match(self.board_descriptors, descriptors)
-        matches = sorted(matches, key=lambda x: x.distance)
-
-        img = cv2.drawMatches(self.board_frame, self.board_keypoints, frame, key_points, matches[:50], frame, flags=2)
-        cv2.imwrite('matches.png', img)
-
-    def get_descriptors(self, frame: np.ndarray = None, path: str = None):
-        if frame is None:
-            if path:
-                frame = cv2.imread(path)
-            else:
-                raise FileNotFoundError("'get_descriptor' - did not receive image nor image path")
-
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        key_points, descriptors = self.sift_feature_extractor.detectAndCompute(gray_frame, None)
-
-        # img = cv2.drawKeypoints(gray_frame,
-        #                         key_points,
-        #                         frame,
-        #                         flags=cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
-        # cv2.imwrite('board_kp.png', img)
-
-        return frame, key_points, descriptors
 
 
 def parse_board(image: np.ndarray, verbose: bool = False) -> Dict[Tuple[int, int], np.ndarray]:
