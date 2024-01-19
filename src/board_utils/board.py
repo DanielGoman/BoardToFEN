@@ -8,16 +8,17 @@ import matplotlib.pyplot as plt
 from itertools import product
 from typing import Dict, Tuple, Optional
 
+from src.board_utils.consts import Canny
+from src.board_utils.old_board import get_edge_image, get_max_seq_lens_per_row, split_board_image_to_squares, crop_image
+
 logger = logging.getLogger(__name__)
 
 
 class Board:
     N_LINES = 9
 
-    def __init__(self, board: np.ndarray, vertical_lines: np.ndarray, horizontal_lines: np.ndarray):
+    def __init__(self, board: np.ndarray):
         self.board = board
-        self.vertical_lines = vertical_lines
-        self.horizontal_lines = horizontal_lines
 
     @property
     def area(self) -> int:
@@ -69,6 +70,21 @@ class Board:
 
         return complete_line_indices
 
+    def my_split_board_into_squares(self):
+        edges = get_edge_image(self.board, lower_threshold=Canny.lower_threshold.value,
+                               upper_threshold=Canny.upper_threshold.value)
+
+        # row_seq = get_max_seq_lens_per_row(edges)
+        # col_seq = get_max_seq_lens_per_row(edges.T)
+        # board_squares = split_board_image_to_squares(self.board, row_seq, col_seq)
+
+        cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(self.board, edges, verbose=True)
+
+        board_squares = split_board_image_to_squares(cropped_image, cropped_row_seq, cropped_col_seq)
+
+        return board_squares
+
+
 
 def parse_board(image: np.ndarray) -> Optional[Dict[Tuple[int, int], np.ndarray]]:
     board = detect_board(image)
@@ -76,9 +92,11 @@ def parse_board(image: np.ndarray) -> Optional[Dict[Tuple[int, int], np.ndarray]
         logger.info("Couldn't detect a board")
         return
 
-    board_squares = board.split_board_into_squares()
+    board_squares = board.my_split_board_into_squares()
 
     return board_squares
+
+
 
 
 def detect_board(image: np.ndarray) -> Optional[Board]:
@@ -109,19 +127,13 @@ def detect_board(image: np.ndarray) -> Optional[Board]:
             continue
 
         roi = image[y:y + h, x:x + w]
-        lines = detect_number_of_lines(roi)
-        if lines is None:
-            continue
 
-        vertical_lines, horizontal_lines = lines
-        if (Board.N_LINES - 2 <= len(vertical_lines) <= Board.N_LINES and
-                Board.N_LINES - 2 <= len(horizontal_lines) <= Board.N_LINES):
-            board_count += 1
-            candidate_board = Board(roi, vertical_lines, horizontal_lines)
-            if board is None:
-                board = candidate_board
-            elif candidate_board > board:
-                board = candidate_board
+        board_count += 1
+        candidate_board = Board(roi)
+        if board is None:
+            board = candidate_board
+        elif candidate_board > board:
+            board = candidate_board
 
     logger.info(f'Detected {board_count} boards. Proceeding with the largest board detected')
 
