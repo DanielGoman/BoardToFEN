@@ -302,6 +302,7 @@ class App:
         """
         self.app.iconify()
         self.board_rows_as_fen = self.pipeline.run_pipeline()
+        # TODO: add error message if no board was detected
         self.app.deiconify()
 
     def on_domain_click(self, domain_number: int):
