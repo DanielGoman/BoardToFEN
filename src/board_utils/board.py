@@ -103,7 +103,7 @@ def detect_board(image: np.ndarray) -> Optional[Board]:
     gray_image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     sharpen_kernel = np.array([[-1, -1, -1],
-                               [-1, 10, -1],
+                               [-1, 9, -1],
                                [-1, -1, -1]])
     sharpened_image = cv2.filter2D(gray_image, -1, sharpen_kernel)
 
@@ -170,7 +170,7 @@ def draw_lines(image, lines, title):
 
 
 if __name__ == "__main__":
-    image = cv2.imread(r"C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\src\data\temp_data\partial_board.png")
+    image = cv2.imread(r"C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\dataset\full_boards\27.png")
     squares = parse_board(image)
 
     fig, axs = plt.subplots(8, 8)
