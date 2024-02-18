@@ -33,27 +33,6 @@ def parse_board(image: np.ndarray, verbose: bool = False) -> Dict[Tuple[int, int
     return board_squares
 
 
-def get_edge_image(image: np.ndarray, lower_threshold: int, upper_threshold: int) -> np.ndarray:
-    """Uses the Canny edge detector to find and filter edges according to the edge threshold
-    Edges with gradients below  `lower_threshold` are removed, edges with gradients above `upper_threshold` are kept.
-    Edges with gradients between `lower_threshold` and `upper_threshold` are kept only if they're adjacent to
-    at least one edge that has a gradient above `upper_threshold`
-
-    Args:
-        image: input image
-        lower_threshold: all edges with gradients below this threshold are removed
-        upper_threshold: all edges with gradients above this threshold are kept
-
-    Returns:
-        edges: binary edges image
-
-    """
-    edges = cv2.Canny(image, lower_threshold, upper_threshold)
-    edges[edges > 0] = 1
-
-    return edges
-
-
 def crop_image(image: np.ndarray, edges: np.ndarray, verbose: bool) -> \
         Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Crops an image to a smaller image that contains only the chess board

@@ -52,8 +52,6 @@ def board_to_pieces():
 
                 image = cv2.imread(str(file_path))
 
-                if file_name == '27.png':
-                    a = 5
                 board_squares_dict = parse_board(image=image)
 
                 relevant_squares_dict = get_relevant_squares(board_squares=board_squares_dict,
