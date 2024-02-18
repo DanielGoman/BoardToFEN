@@ -6,6 +6,7 @@ from typing import List, Dict, Tuple
 from scipy.signal import convolve2d
 from matplotlib import pyplot as plt
 
+from src.board_utils.canny import canny_edge_detector
 from src.board_utils.consts import Canny
 from src.data.consts.squares_consts import BOARD_SIDE_SIZE
 
@@ -23,8 +24,7 @@ def parse_board(image: np.ndarray, verbose: bool = False) -> Dict[Tuple[int, int
                         board_squares[(square_x, square_y)] = np.ndarray of the square
 
     """
-    edges = get_edge_image(image, lower_threshold=Canny.lower_threshold.value,
-                           upper_threshold=Canny.upper_threshold.value)
+    edges = canny_edge_detector(image)
 
     cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges, verbose=verbose)
 
