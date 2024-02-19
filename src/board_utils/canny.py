@@ -11,7 +11,7 @@ def canny_edge_detector(image, low_thresh_ratio=0.05, high_thresh_ratio=0.15):
     """Canny edge detection without using cv2.Canny."""
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     blurred_img = cv2.GaussianBlur(gray, (5, 5), 1.4)
-    magnitude, angle = compute_gradients(blurred_img)
+    magnitude, angle = compute_edge_gradients(blurred_img)
 
     # Assuming NMS and thresholding functions are implemented
     nms_result = non_max_suppression(magnitude, angle)  # This needs actual implementation
@@ -25,33 +25,44 @@ def canny_edge_detector(image, low_thresh_ratio=0.05, high_thresh_ratio=0.15):
     return edges
 
 
-def compute_gradients(image):
-    """Compute horizontal and vertical gradients using Sobel operators."""
+def compute_edge_gradients(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    """Compute horizontal and vertical gradients (magnitude and angle in degrees) using Sobel operators.
+
+    Args:
+        image: image to which this method calculates the edge magnitude and angle
+
+    Returns:
+        edge_magnitude: magnitude of the edge per pixel (considering edge magnitude horizontally and vertically)
+        edge_angle: angle of the edge per pixel (depends on the edge magnitude in the
+                    horizontal and vertical directions)
+
+    """
     grad_x = cv2.Sobel(image, cv2.CV_64F, 1, 0, ksize=3)
     grad_y = cv2.Sobel(image, cv2.CV_64F, 0, 1, ksize=3)
-    magnitude = cv2.magnitude(grad_x, grad_y)
-    angle = cv2.phase(grad_x, grad_y, angleInDegrees=True)
-    return magnitude, angle
+    edge_magnitude = cv2.magnitude(grad_x, grad_y)
+    edge_angle = cv2.phase(grad_x, grad_y, angleInDegrees=True)
+
+    return edge_magnitude, edge_angle
 
 
 def non_max_suppression(magnitude, angle):
     """Apply non-maximum suppression to thin out edges."""
     M, N = magnitude.shape
-    Z = np.zeros((M,N), dtype=np.float32)
+    Z = np.zeros((M, N), dtype=np.float32)
     angle = angle % 180  # Ensure angles are within 0-180
 
-    for i in range(1, M-1):
-        for j in range(1, N-1):
+    for i in range(1, M - 1):
+        for j in range(1, N - 1):
             try:
                 # Determine directions
                 if (0 <= angle[i, j] < 22.5) or (157.5 <= angle[i, j] <= 180):
-                    neighbors = [magnitude[i, j+1], magnitude[i, j-1]]
+                    neighbors = [magnitude[i, j + 1], magnitude[i, j - 1]]
                 elif (22.5 <= angle[i, j] < 67.5):
-                    neighbors = [magnitude[i-1, j+1], magnitude[i+1, j-1]]
+                    neighbors = [magnitude[i - 1, j + 1], magnitude[i + 1, j - 1]]
                 elif (67.5 <= angle[i, j] < 112.5):
-                    neighbors = [magnitude[i-1, j], magnitude[i+1, j]]
+                    neighbors = [magnitude[i - 1, j], magnitude[i + 1, j]]
                 elif (112.5 <= angle[i, j] < 157.5):
-                    neighbors = [magnitude[i-1, j-1], magnitude[i+1, j+1]]
+                    neighbors = [magnitude[i - 1, j - 1], magnitude[i + 1, j + 1]]
 
                 # Suppress pixels not forming an edge
                 if magnitude[i, j] >= max(neighbors):
