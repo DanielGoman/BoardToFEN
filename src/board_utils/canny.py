@@ -1,7 +1,7 @@
-from typing import Tuple
-
 import cv2
 import numpy as np
+
+from typing import Tuple
 
 from src.board_utils.consts import Canny
 
