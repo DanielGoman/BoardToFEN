@@ -17,8 +17,8 @@ def canny_edge_detector(image, low_thresh_ratio=0.05, high_thresh_ratio=0.15):
     nms_result = non_max_suppression(edge_magnitude, edge_angle)  # This needs actual implementation
     high_thresh = nms_result.max() * high_thresh_ratio
     low_thresh = high_thresh * low_thresh_ratio
-    thresholded, weak_edge, strong_edge = double_edge_threshold(nms_result, low_thresh, high_thresh)
-    edges = edge_tracking(thresholded, weak_edge, strong_edge)
+    thresholded = double_edge_threshold(nms_result, low_thresh, high_thresh)
+    edges = weak_edge_correction(thresholded)
 
     edges[edges > 0] = 1
 
@@ -85,7 +85,7 @@ def non_max_suppression(edge_magnitude: np.ndarray, edge_angle: np.ndarray) -> n
     return nms_edge_image
 
 
-def double_edge_threshold(edge_image: np.ndarray, low_thresh: float, high_thresh: float) -> Tuple[np.ndarray, int, int]:
+def double_edge_threshold(edge_image: np.ndarray, low_thresh: float, high_thresh: float) -> np.ndarray:
     """Apply double thresholding to distinguish strong, weak, and non-edges.
     edge_image[i, j] is a strong edge if edge_image[i, j] > high_threshold (and is given `strong edge` value)
     edge_image[i, j] is a weak edge if low_thresh < edge_image[i, j] < high_thresh (and is given `weak edge` value)
@@ -98,31 +98,36 @@ def double_edge_threshold(edge_image: np.ndarray, low_thresh: float, high_thresh
 
     Returns:
         thresholded: thresholded edge image
-        weak_edge: value given to weak edges
-        strong_edge: value given to strong edges
 
     """
-    strong_edge = Canny.strong_edge.value
-    weak_edge = Canny.weak_edge.value
-
     strong_i, strong_j = np.where(edge_image >= high_thresh)
     weak_i, weak_j = np.where((edge_image <= high_thresh) & (edge_image >= low_thresh))
 
     thresholded = np.zeros(edge_image.shape, dtype=np.uint8)
-    thresholded[strong_i, strong_j] = strong_edge
-    thresholded[weak_i, weak_j] = weak_edge
+    thresholded[strong_i, strong_j] = Canny.strong_edge.value
+    thresholded[weak_i, weak_j] = Canny.weak_edge.value
 
-    return thresholded, weak_edge, strong_edge
+    return thresholded
 
 
-def edge_tracking(thresholded, weak, strong=255):
-    """Finalize edge detection by converting weak edges connected to strong edges into strong edges."""
-    M, N = thresholded.shape
-    for i in range(1, M - 1):
-        for j in range(1, N - 1):
-            if thresholded[i, j] == weak:
-                if np.any(thresholded[i - 1:i + 2, j - 1:j + 2] == strong):
-                    thresholded[i, j] = strong
-                else:
-                    thresholded[i, j] = 0
+def weak_edge_correction(thresholded: np.ndarray) -> np.ndarray:
+    """Finalize edge detection by converting weak edges connected to strong edges into strong edges.
+    For any weak edge pixel, if any of the neighboring pixels of the current pixel represents a strong edge then
+    the current weak edge pixel is also considered a strong edge, otherwise it's considered non-edge and is set to 0.
+
+    Args:
+        thresholded: image after double thresholding
+
+    Returns:
+        thresholded: image after deciding for each weak edge if it's not an edge or a strong edge
+
+    """
+    height, width = thresholded.shape
+
+    for i in range(1, height - 1):
+        for j in range(1, width - 1):
+            if thresholded[i, j] == Canny.weak_edge.value:
+                if np.any(thresholded[i - 1:i + 2, j - 1:j + 2] == Canny.strong_edge.value):
+                    thresholded[i, j] = Canny.strong_edge.value
+
     return thresholded
