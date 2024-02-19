@@ -11,10 +11,10 @@ def canny_edge_detector(image, low_thresh_ratio=0.05, high_thresh_ratio=0.15):
     """Canny edge detection without using cv2.Canny."""
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     blurred_img = cv2.GaussianBlur(gray, (5, 5), 1.4)
-    magnitude, angle = compute_edge_gradients(blurred_img)
+    edge_magnitude, edge_angle = compute_edge_gradients(blurred_img)
 
     # Assuming NMS and thresholding functions are implemented
-    nms_result = non_max_suppression(magnitude, angle)  # This needs actual implementation
+    nms_result = non_max_suppression(edge_magnitude, edge_angle)  # This needs actual implementation
     high_thresh = nms_result.max() * high_thresh_ratio
     low_thresh = high_thresh * low_thresh_ratio
     thresholded, weak_edge, strong_edge = double_edge_threshold(nms_result, low_thresh, high_thresh)
@@ -45,35 +45,44 @@ def compute_edge_gradients(image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     return edge_magnitude, edge_angle
 
 
-def non_max_suppression(magnitude, angle):
-    """Apply non-maximum suppression to thin out edges."""
-    M, N = magnitude.shape
-    Z = np.zeros((M, N), dtype=np.float32)
-    angle = angle % 180  # Ensure angles are within 0-180
+def non_max_suppression(edge_magnitude: np.ndarray, edge_angle: np.ndarray) -> np.ndarray:
+    """Apply non-maximum suppression to thin out edges.
+    For each pixel, find its neighboring pixels by its angle.
+    If that pixel has larger magnitude than its neighbors then its magnitude is kept, otherwise it's zeroed out
 
-    for i in range(1, M - 1):
-        for j in range(1, N - 1):
-            try:
-                # Determine directions
-                if (0 <= angle[i, j] < 22.5) or (157.5 <= angle[i, j] <= 180):
-                    neighbors = [magnitude[i, j + 1], magnitude[i, j - 1]]
-                elif (22.5 <= angle[i, j] < 67.5):
-                    neighbors = [magnitude[i - 1, j + 1], magnitude[i + 1, j - 1]]
-                elif (67.5 <= angle[i, j] < 112.5):
-                    neighbors = [magnitude[i - 1, j], magnitude[i + 1, j]]
-                elif (112.5 <= angle[i, j] < 157.5):
-                    neighbors = [magnitude[i - 1, j - 1], magnitude[i + 1, j + 1]]
+    Args:
+        edge_magnitude: magnitude of the edge per pixel
+        edge_angle: angle of the edge per pixel
 
-                # Suppress pixels not forming an edge
-                if magnitude[i, j] >= max(neighbors):
-                    Z[i, j] = magnitude[i, j]
-                else:
-                    Z[i, j] = 0
+    Returns:
+        nms_edge_image: edge image after nms
 
-            except IndexError as e:
-                pass
+    """
+    height, width = edge_magnitude.shape
+    nms_edge_image = np.zeros((height, width), dtype=np.float32)
+    edge_angle = edge_angle % 180  # Ensure angles are within 0-180
 
-    return Z
+    for i in range(1, height - 1):
+        for j in range(1, width - 1):
+            # Determine direction of the edge
+            if (0 <= edge_angle[i, j] < 22.5) or (157.5 <= edge_angle[i, j] <= 180):
+                neighbors = [edge_magnitude[i, j + 1], edge_magnitude[i, j - 1]]
+            elif 22.5 <= edge_angle[i, j] < 67.5:
+                neighbors = [edge_magnitude[i - 1, j + 1], edge_magnitude[i + 1, j - 1]]
+            elif 67.5 <= edge_angle[i, j] < 112.5:
+                neighbors = [edge_magnitude[i - 1, j], edge_magnitude[i + 1, j]]
+            elif 112.5 <= edge_angle[i, j] < 157.5:
+                neighbors = [edge_magnitude[i - 1, j - 1], edge_magnitude[i + 1, j + 1]]
+            else:
+                continue
+
+            # Suppress pixels not forming an edge
+            if edge_magnitude[i, j] >= max(*neighbors):
+                nms_edge_image[i, j] = edge_magnitude[i, j]
+            else:
+                nms_edge_image[i, j] = 0
+
+    return nms_edge_image
 
 
 def double_edge_threshold(edge_image: np.ndarray, low_thresh: float, high_thresh: float) -> Tuple[np.ndarray, int, int]:
