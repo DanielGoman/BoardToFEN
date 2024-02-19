@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from typing import Dict, Tuple, Optional
 
 from src.board_utils.canny import canny_edge_detector
+from src.board_utils.consts import Canny
 from src.board_utils.old_board import split_board_image_to_squares, crop_image
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,8 @@ class Board:
                             board_squares[(square_x, square_y)] = np.ndarray of the square
 
         """
-        edges = canny_edge_detector(self.board)
+        edges = canny_edge_detector(self.board, low_thresh_ratio=Canny.low_thresh_ratio.value,
+                                    high_thresh_ratio=Canny.high_thresh_ratio.value)
 
         # TODO: correct splitting into squares for lichess.org images
         cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(self.board, edges, verbose=True)

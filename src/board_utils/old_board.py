@@ -11,7 +11,6 @@ from src.board_utils.consts import Canny
 from src.data.consts.squares_consts import BOARD_SIDE_SIZE
 
 
-
 def parse_board(image: np.ndarray, verbose: bool = False) -> Dict[Tuple[int, int], np.ndarray]:
     """Parses an image that presumably contains a chess board, returning a dictionary of squares of the board
 
@@ -24,7 +23,8 @@ def parse_board(image: np.ndarray, verbose: bool = False) -> Dict[Tuple[int, int
                         board_squares[(square_x, square_y)] = np.ndarray of the square
 
     """
-    edges = canny_edge_detector(image)
+    edges = canny_edge_detector(image, low_thresh_ratio=Canny.low_thresh_ratio.value,
+                                high_thresh_ratio=Canny.high_thresh_ratio.value)
 
     cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges, verbose=verbose)
 
