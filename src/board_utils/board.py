@@ -41,7 +41,6 @@ class Board:
         edges = canny_edge_detector(self.board, low_thresh_ratio=Canny.low_thresh_ratio.value,
                                     high_thresh_ratio=Canny.high_thresh_ratio.value)
 
-        # TODO: correct splitting into squares for lichess.org images
         cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(self.board, edges, verbose=True)
 
         board_squares = split_board_image_to_squares(cropped_image, cropped_row_seq, cropped_col_seq)
