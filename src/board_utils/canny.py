@@ -6,15 +6,34 @@ from typing import Tuple
 from src.board_utils.consts import Canny
 
 
-def canny_edge_detector(image, low_thresh_ratio=0.05, high_thresh_ratio=0.15):
-    # TODO: Understand this code and document it
-    """Canny edge detection without using cv2.Canny."""
+def canny_edge_detector(image: np.ndarray, high_thresh_ratio: float, low_thresh_ratio: float) -> np.ndarray:
+    """Canny edge detector, the stages are as follows:
+    1. Converting the input RGB image to a grayscale image
+    2. Applying Gaussian Blur to the grayscale image
+    3. Calculating per pixel edge magnitude and angle
+    4. Applying NMS to those edges
+    5. Double thresholding the edge image
+    6. Correcting the weak edge to either non-edges or to strong edges
+    7. Turning the edge map to binary (not part of the original algorithm)
+
+    The double thresholding thresholds are calculated as follows:
+    - the high threshold is taken as a certain percentage (defined by high_thresh_ratio) of the maximal edge magnitude
+    - the low threshold is taken as a certain percentage (defined by low_thresh_ratio) of the high threshold
+
+    Args:
+        image: an input RGB image
+        high_thresh_ratio: upper threshold ratio for the double thresholding
+        low_thresh_ratio: lower threshold ratio for the double thresholding
+
+    Returns:
+        edges: binary edge image
+
+    """
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     blurred_img = cv2.GaussianBlur(gray, (5, 5), 1.4)
     edge_magnitude, edge_angle = compute_edge_gradients(blurred_img)
 
-    # Assuming NMS and thresholding functions are implemented
-    nms_result = non_max_suppression(edge_magnitude, edge_angle)  # This needs actual implementation
+    nms_result = non_max_suppression(edge_magnitude, edge_angle)
     high_thresh = nms_result.max() * high_thresh_ratio
     low_thresh = high_thresh * low_thresh_ratio
     thresholded = double_edge_threshold(nms_result, low_thresh, high_thresh)
