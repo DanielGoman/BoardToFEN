@@ -1,8 +1,13 @@
+from typing import Tuple
+
 import cv2
 import numpy as np
 
+from src.board_utils.consts import Canny
+
 
 def canny_edge_detector(image, low_thresh_ratio=0.05, high_thresh_ratio=0.15):
+    # TODO: Understand this code and document it
     """Canny edge detection without using cv2.Canny."""
     gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
     blurred_img = cv2.GaussianBlur(gray, (5, 5), 1.4)
@@ -12,8 +17,8 @@ def canny_edge_detector(image, low_thresh_ratio=0.05, high_thresh_ratio=0.15):
     nms_result = non_max_suppression(magnitude, angle)  # This needs actual implementation
     high_thresh = nms_result.max() * high_thresh_ratio
     low_thresh = high_thresh * low_thresh_ratio
-    thresholded, weak, strong = threshold(nms_result, low_thresh, high_thresh)
-    edges = edge_tracking(thresholded, weak, strong)
+    thresholded, weak_edge, strong_edge = double_edge_threshold(nms_result, low_thresh, high_thresh)
+    edges = edge_tracking(thresholded, weak_edge, strong_edge)
 
     edges[edges > 0] = 1
 
@@ -60,19 +65,34 @@ def non_max_suppression(magnitude, angle):
     return Z
 
 
-def threshold(img, low_thresh, high_thresh):
-    """Apply double thresholding to distinguish strong, weak, and non-edges."""
-    strong = np.uint8(255)
-    weak = np.uint8(75)
+def double_edge_threshold(edge_image: np.ndarray, low_thresh: float, high_thresh: float) -> Tuple[np.ndarray, int, int]:
+    """Apply double thresholding to distinguish strong, weak, and non-edges.
+    edge_image[i, j] is a strong edge if edge_image[i, j] > high_threshold (and is given `strong edge` value)
+    edge_image[i, j] is a weak edge if low_thresh < edge_image[i, j] < high_thresh (and is given `weak edge` value)
+    otherwise edge_image[i, j] isn't considered an edge at all (and is given a value of zero after thresholding)
 
-    strong_i, strong_j = np.where(img >= high_thresh)
-    weak_i, weak_j = np.where((img <= high_thresh) & (img >= low_thresh))
-    non_edges_i, non_edges_j = np.where(img < low_thresh)
+    Args:
+        edge_image: edge image after edge detection using Sobel filter
+        low_thresh: low threshold
+        high_thresh: high threshold
 
-    thresholded = np.zeros(img.shape, dtype=np.uint8)
-    thresholded[strong_i, strong_j] = strong
-    thresholded[weak_i, weak_j] = weak
-    return thresholded, weak, strong
+    Returns:
+        thresholded: thresholded edge image
+        weak_edge: value given to weak edges
+        strong_edge: value given to strong edges
+
+    """
+    strong_edge = Canny.strong_edge.value
+    weak_edge = Canny.weak_edge.value
+
+    strong_i, strong_j = np.where(edge_image >= high_thresh)
+    weak_i, weak_j = np.where((edge_image <= high_thresh) & (edge_image >= low_thresh))
+
+    thresholded = np.zeros(edge_image.shape, dtype=np.uint8)
+    thresholded[strong_i, strong_j] = strong_edge
+    thresholded[weak_i, weak_j] = weak_edge
+
+    return thresholded, weak_edge, strong_edge
 
 
 def edge_tracking(thresholded, weak, strong=255):
