@@ -1,0 +1,2 @@
+INFERENCE_CONFIG_PATH = 'configs/'
+INFERENCE_CONFIG_FILE_NAME = 'inference.yaml'

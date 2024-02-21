@@ -1,0 +1,5 @@
+
+in_channels: 3
+hidden_dim: 8
+out_channels: 16
+num_classes: 13

@@ -1,0 +1,12 @@
+
+train:
+  train_size: 0.8
+  lr: 3e-4
+  batch_size: 16
+  num_workers: 4
+  num_epochs: 50
+  print_interval: 10
+  shuffle_data: False
+  minibatch_size: -1
+  eval_train_size: 0.01
+  eval_val_size: 0.04

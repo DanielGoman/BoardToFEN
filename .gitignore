@@ -1,0 +1,7 @@
+.idea/
+__pycache__/
+
+outputs/
+dataset/
+old_data/
+progress_notes.docx
