@@ -1,6 +1,6 @@
 import tkinter as tk
 
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from typing import List, Dict, Tuple
 
 from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
@@ -149,6 +149,7 @@ class App:
             row_var: variable containing the currently specified en-passant row
 
         """
+
         def reset_selections(_file_var, _row_var):
             _file_var.set(self.default_value)
             _row_var.set(self.default_value)
@@ -199,6 +200,7 @@ class App:
             halfmoves_var: variable containing the currently specified number of the halfmoves dropdown
 
         """
+
         def reset_selections(_halfmoves_var):
             _halfmoves_var.set(self.default_value)
 
@@ -238,6 +240,7 @@ class App:
             fullmoves_entry_var: variable contains the currently specified number of full moves
 
         """
+
         def validate_input(char):
             # This function is called whenever a key is pressed
             # It checks if the input is a digit or an empty string (allowing deletion)
@@ -296,13 +299,35 @@ class App:
         create_image_button(image_2, domain_keys[1])
         create_image_button(image_3, domain_keys[2])
 
+    def show_response_message(self):
+        """Show a success/failure message box based on whether the detection of the board succeeded or not
+        """
+        message_box = tk.Toplevel(self.app)
+        width = self.app.winfo_width()
+        height = 20
+        x = self.app.winfo_x() + self.app.winfo_width() // 2 - width // 2
+        y = self.app.winfo_y() + 35
+        message_box.geometry(f"{width}x{height}+{x}+{y}")
+        message_box.overrideredirect(True)
+        message_box.attributes('-topmost', True)
+
+        if self.board_rows_as_fen is None:
+            status_label = tk.Label(message_box, text="Failed to detect board", fg='red', bg='black', bd=4,
+                                    font=('Arial', 12, 'bold'))
+        else:
+            status_label = tk.Label(message_box, text="Successfully analyzed board", fg='red', bg='black', bd=4,
+                                    font=('Arial', 12, 'bold'))
+
+        status_label.pack()
+        self.app.after(3000, message_box.destroy)
+
     def on_screenshot_click(self):
         """Lets the user take a screenshot, and converts the board in the screenshot to FEN format
 
         """
         self.app.iconify()
         self.board_rows_as_fen = self.pipeline.run_pipeline()
-        # TODO: add error message if no board was detected
+        self.show_response_message()
         self.app.deiconify()
 
     def on_domain_click(self, domain_number: int):
