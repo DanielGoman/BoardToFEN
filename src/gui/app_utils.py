@@ -1,4 +1,6 @@
 from typing import List
+
+import tkinter as tk
 from tkinter import BooleanVar, StringVar
 
 from src.gui.consts import ActiveColor
@@ -46,3 +48,25 @@ def gui_to_fen_parameters(board_rows_as_fen: List[str], current_color_index: int
     fen_url = convert_fen_to_url(fen_parts=fen_parts, domain=domain_number)
 
     return fen_url
+
+
+def show_disappearing_message_box(app: tk.Tk, message: str):
+    """Displays a disappearing message box
+
+    Args:
+        app: the app object to on which we display the message box
+        message: content of the message to be displayed
+
+    """
+    message_box = tk.Toplevel(app)
+    width = app.winfo_width()
+    height = 20
+    x = app.winfo_x() +app.winfo_width() // 2 - width // 2
+    y = app.winfo_y() + 35
+    message_box.geometry(f"{width}x{height}+{x}+{y}")
+    message_box.overrideredirect(True)
+    message_box.attributes('-topmost', True)
+
+    message_label = tk.Label(message_box, text=message, fg='red', bg='black', bd=4, font=('Arial', 12, 'bold'))
+    message_label.pack()
+    app.after(3000, message_box.destroy)
