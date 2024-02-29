@@ -8,8 +8,8 @@ import pyperclip
 
 from src.fen_converter.consts import Domains
 from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
-from src.gui.app_utils import gui_to_fen_parameters, show_disappearing_message_box
-from src.gui.consts import ActiveColor
+from src.app.app_utils import gui_to_fen_parameters, show_disappearing_message_box
+from src.app.consts import ActiveColor
 from src.pipeline.pipeline import Pipeline
 
 
