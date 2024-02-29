@@ -12,7 +12,7 @@ Additionally, one could simply copy the [FEN representation](https://www.chess.c
 
 # ▶️ Example
 
-![](assets/Usage example.gif)
+![](assets/Usage%20example.gif)
 
 ---
 
