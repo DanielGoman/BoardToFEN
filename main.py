@@ -2,7 +2,7 @@ import hydra
 
 from omegaconf import DictConfig
 
-from src.gui.app import App
+from src.app.app import App
 from src.pipeline.pipeline import Pipeline
 from src.fen_converter.consts import Domains
 from consts import INFERENCE_CONFIG_PATH, INFERENCE_CONFIG_FILE_NAME
