@@ -10,11 +10,17 @@ Additionally, one could simply copy the [FEN representation](https://www.chess.c
 
 ---
 
+
+
+
 # ▶️ Example
 
 ![](assets/Usage%20example.gif)
 
 ---
+
+
+
 
 # 🚀 Motivation
 
@@ -25,6 +31,8 @@ In order to properly analyze the position I came across, sometimes I needed the 
 Unfortunately, it would take a while to copy the position to a chess analyzer, and hence this project 😊
 
 ---
+
+
 
 # 🐥 Getting started
 
@@ -38,11 +46,14 @@ To boot the application interface use
 ```bash
 cd BoardToFEN
 pip install -r requirements.txt
-EXPORT DISPLAY=:0.0 # Ubuntu only
+EXPORT DISPLAY=:0.0 # Linux only
 python main.py
 ```
 
 ---
+
+
+
 
 # 📁 Dataset
 
@@ -56,13 +67,21 @@ colored square compared to their starting position
 contain pieces of `replaced_king_queen`)
 - **labels** - json square-level labels files for each file
 
+
+
 ## Importing the dataset
 
+### Linux
 To import the dataset into the project directory use
 ```bash
 wget -O "Board2FEN dataset.zip" -r --no-check-certificate 'https://drive.google.com/uc?export=download&id=1xc9vXlE55g4SCeJNspAnF_j-QJTNaoaZ' 
 unzip  "Board2FEN dataset.zip" -d dataset/
 ```
+
+### Windows
+Just download from the link and unzip with your favorite unzipping software 😉
+
+
 
 # 📜 Available scripts
 
