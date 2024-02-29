@@ -38,6 +38,8 @@ git clone https://github.com/DanielGoman/BoardToFEN.git
 To boot the application interface use
 ```bash
 cd BoardToFEN
+pip install -r requirements.txt
+EXPORT DISPLAY=:0.0 # Ubuntu only
 python main.py
 ```
 
