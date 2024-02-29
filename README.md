@@ -61,7 +61,6 @@ Importing the dataset
 -
 To import the dataset into the project directory use
 ```bash
-wget
-unzip
-mv (rename)
+wget -O "Board2FEN dataset.zip" -r --no-check-certificate 'https://drive.google.com/uc?export=download&id=1xc9vXlE55g4SCeJNspAnF_j-QJTNaoaZ' 
+unzip  "Board2FEN dataset.zip" -d dataset/
 ```
