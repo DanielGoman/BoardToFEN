@@ -1,7 +1,7 @@
 # BoardToFEN
 
-Introduction
--
+# 📖 Introduction
+
 This repository allows the user to screenshot window on his screen.
 
 If this window contains a digital chessboard, the board will be detected and converted into a URL to the prominent chess 
@@ -10,15 +10,14 @@ Additionally, one could simply copy the [FEN representation](https://www.chess.c
 
 ---
 
-Example
--
+# ▶️ Example
 
 ![](assets/Usage example.gif)
 
 ---
 
-Motivation
--
+# 🚀 Motivation
+
 The motivation of this project has arisen during the time when I studied and analyzed position from digital chess books.
 
 In order to properly analyze the position I came across, sometimes I needed the assistance of a chess engine.
@@ -27,8 +26,8 @@ Unfortunately, it would take a while to copy the position to a chess analyzer, a
 
 ---
 
-Getting started
--
+# 🐥 Getting started
+
 
 To clone the repository use
 ```bash
@@ -45,8 +44,8 @@ python main.py
 
 ---
 
-Dataset
--
+# 📁 Dataset
+
 The dataset can be found in the following [drive](https://drive.google.com/file/d/1xc9vXlE55g4SCeJNspAnF_j-QJTNaoaZ/view?usp=drive_link)
 
 The zip file contains 4 directories:
@@ -57,8 +56,8 @@ colored square compared to their starting position
 contain pieces of `replaced_king_queen`)
 - **labels** - json square-level labels files for each file
 
-Importing the dataset
--
+## Importing the dataset
+
 To import the dataset into the project directory use
 ```bash
 wget -O "Board2FEN dataset.zip" -r --no-check-certificate 'https://drive.google.com/uc?export=download&id=1xc9vXlE55g4SCeJNspAnF_j-QJTNaoaZ' 
