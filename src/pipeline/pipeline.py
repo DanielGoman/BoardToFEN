@@ -25,7 +25,8 @@ class Pipeline:
 
         """
         self.model = PieceClassifier(**model_params)
-        self.model.load_state_dict(torch.load(model_path))
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
         self.transforms = parse_config_transforms(transforms)
 
     def run_pipeline(self) -> Optional[List[str]]:
