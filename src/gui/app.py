@@ -68,7 +68,7 @@ class App:
         """Creates the button which accepts from the user the current active color, as well as the screenshot button
 
         Args:
-            active_color_image_paths: paths to images of each color
+            active_color_image_paths: paths to assets of each color
             screenshot_image_path: path to the image of the screenshot button
 
         """
@@ -76,7 +76,7 @@ class App:
         canvas = tk.Canvas(self.app, width=300, height=50)
         canvas.pack(pady=(20, 5))
 
-        # Load images
+        # Load assets
         self.photo_images = [tk.PhotoImage(file=image_path) for image_path in active_color_image_paths.values()]
         self.photo_images = [image.subsample(2) for image in self.photo_images]
 
@@ -281,7 +281,7 @@ class App:
         """Creates the domain buttons
 
         Args:
-            image_paths: paths to images of each domain
+            image_paths: paths to assets of each domain
 
         """
         domain_keys = list(image_paths.keys())
@@ -298,7 +298,7 @@ class App:
             button.image = image
             button.pack(side=tk.LEFT, padx=(30, 30), pady=5)
 
-        # Create three buttons with images
+        # Create three buttons with assets
         create_image_button(image_1, domain_keys[0])
         create_image_button(image_2, domain_keys[1])
         create_image_button(image_3, domain_keys[2])
