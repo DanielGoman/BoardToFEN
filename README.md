@@ -64,3 +64,22 @@ To import the dataset into the project directory use
 wget -O "Board2FEN dataset.zip" -r --no-check-certificate 'https://drive.google.com/uc?export=download&id=1xc9vXlE55g4SCeJNspAnF_j-QJTNaoaZ' 
 unzip  "Board2FEN dataset.zip" -d dataset/
 ```
+
+# 📜 Available scripts
+
+ - [Board parser](#board-parser)
+ - [Train test split](#train-test-split)
+ - [Train](#train)
+ - [main](#main)
+
+
+## Board Parser
+
+
+## Train test split
+
+
+## Train
+
+
+## Main
