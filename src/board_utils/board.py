@@ -127,8 +127,8 @@ def detect_board(image: np.ndarray) -> Optional[Board]:
 
 
 if __name__ == "__main__":
-    image = cv2.imread(r"C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\src\data\temp_data\lichess.png")
-    squares = parse_board(image)
+    _image = cv2.imread(r"C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\src\data\temp_data\lichess.png")
+    squares = parse_board(_image)
 
     fig, axs = plt.subplots(8, 8)
     for (i, j), square in squares.items():
