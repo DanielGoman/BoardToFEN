@@ -32,8 +32,3 @@ class KeyboardController:
         """
         if key == KeyCode.from_char(self.start_key):
             self.pipeline.run_pipeline()
-
-
-if __name__ == "__main__":
-    controller = KeyboardController()
-    controller.start_listener()

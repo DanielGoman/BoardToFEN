@@ -42,8 +42,3 @@ class ImageCapture:
         frame = np.array(capture)
 
         return frame
-
-
-if __name__ == "__main__":
-    cap = ImageCapture()
-    img = cap.capture()
