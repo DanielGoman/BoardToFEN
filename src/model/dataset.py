@@ -1,15 +1,11 @@
-import json
 import os
+import json
 
-import hydra
 import numpy as np
 import torch
 import torch.nn.functional as F
 import torchvision
-
-from omegaconf import DictConfig
 from PIL import Image
-
 from torch.utils.data import Dataset
 from typing import Dict, List, Tuple
 
@@ -151,16 +147,3 @@ class PiecesDataset(Dataset):
         transformed_image = self.transforms(image)
 
         return transformed_image, image_label
-
-
-@hydra.main(config_path=r'../../configs/', config_name=r'train.yaml', version_base='1.2')
-def test_run(config: DictConfig):
-    images_dir_path_ = config.paths.data_paths.image_dir_path
-    labels_path_ = config.paths.data_paths.labels_json_path
-    dataset = PiecesDataset(images_dir_path=images_dir_path_,
-                            labels_path=labels_path_)
-
-
-if __name__ == "__main__":
-    test_run()
-

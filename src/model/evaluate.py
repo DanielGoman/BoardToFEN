@@ -1,6 +1,6 @@
 import logging
-import torch
 
+import torch
 from torch.utils.tensorboard import SummaryWriter
 
 from src.data.consts.piece_consts import REVERSED_LABELS, LABELS

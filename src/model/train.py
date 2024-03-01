@@ -1,22 +1,19 @@
 import os
 import logging
-import hydra
 
+import hydra
 import torch
 import torchvision
 import numpy as np
 import torch.nn as nn
-
-from typing import List
 from omegaconf import DictConfig
-from matplotlib import pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 
-from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
+from src.model.model import PieceClassifier
 from src.model.dataset import PiecesDataset
-from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 from src.utils.transforms import parse_config_transforms
+from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 from src.visualization.train_progress_visualization import plot_learning_curves
 
 
@@ -71,14 +68,10 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         val_loader = None
         eval_val_loader = None
     else:
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
-                                                 shuffle=shuffle_data, num_workers=num_workers)
-
         eval_train_loader = get_subset_dataloader(dataset=train_dataset,
                                                   subset_ratio=config.hyperparams.train.eval_train_size)
-        # eval_val_loader = get_subset_dataloader(dataset=val_dataset,
-        #                                         subset_ratio=config.hyperparams.train.eval_val_size)
-        eval_val_loader = val_loader
+        eval_val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
+                                                      shuffle=shuffle_data, num_workers=num_workers)
 
     train_size = len(train_dataset) * batch_size
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
