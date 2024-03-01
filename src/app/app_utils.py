@@ -3,7 +3,7 @@ from typing import List
 import tkinter as tk
 from tkinter import BooleanVar, StringVar
 
-from src.gui.consts import ActiveColor
+from src.app.consts import ActiveColor
 from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
 
 

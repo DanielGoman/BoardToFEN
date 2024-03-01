@@ -17,6 +17,7 @@ from src.model.evaluate import eval_model
 from src.model.dataset import PiecesDataset
 from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 from src.utils.transforms import parse_config_transforms
+from src.visualization.train_progress_visualization import plot_learning_curves
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
@@ -195,37 +196,6 @@ def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float
     subset_loader = torch.utils.data.DataLoader(subset, batch_size=subset_size)
 
     return subset_loader
-
-
-def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracies: List[float],
-                         epoch_val_accuracies: List[float] = None, plots_path: str = ''):
-    """Plots train loss, train accuracy and validation accuracy over epochs
-
-    Args:
-        epoch_losses: average accumulated loss per epoch
-        epoch_train_accuracies: train accuracy per epoch (type and color separately)
-        epoch_val_accuracies: validation accuracy per epoch (type and color separately)
-        plots_path: path to the directory in which the plots will be saved
-
-    """
-    num_epochs = len(epoch_losses)
-
-    plt.plot(np.arange(num_epochs), epoch_losses)
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('NLLLoss over epochs')
-    plt.savefig(os.path.join(plots_path, 'loss.png'))
-    plt.show()
-
-    plt.plot(np.arange(num_epochs), epoch_train_accuracies, label='train')
-    if epoch_val_accuracies:
-        plt.plot(np.arange(num_epochs), epoch_val_accuracies, label='val')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Balanced accuracy on piece types over epochs')
-    plt.legend()
-    plt.savefig(os.path.join(plots_path, 'train_accuracy.png'))
-    plt.show()
 
 
 # tensorboard --logdir=src/model/runs
