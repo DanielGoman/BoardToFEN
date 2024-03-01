@@ -1,16 +1,13 @@
 import tkinter as tk
 import webbrowser
-
-from tkinter import ttk, messagebox
+from tkinter import ttk
 from typing import List, Dict, Tuple
 
 import pyperclip
 
-from src.fen_converter.consts import Domains
-from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
-from src.app.app_utils import gui_to_fen_parameters, show_disappearing_message_box
-from src.app.consts import ActiveColor
 from src.pipeline.pipeline import Pipeline
+from src.fen_converter.consts import Domains
+from src.app.app_utils import gui_to_fen_parameters, show_disappearing_message_box
 
 
 class App:
@@ -51,7 +48,7 @@ class App:
         self.file_var, self.row_var = self.make_enpassant_dropdowns(self.square_options)
 
         # Create half-moves dropdown
-        self.halfmove_options = list(range(50))
+        self.halfmove_options = [str(i) for i in range(50)]
         self.n_halfmoves_var = self.make_halfmoves_dropdown(self.halfmove_options)
 
         # Create full-move entry
@@ -194,7 +191,7 @@ class App:
 
         return file_var, row_var
 
-    def make_halfmoves_dropdown(self, halfmove_options: List[int]):
+    def make_halfmoves_dropdown(self, halfmove_options: List[str]):
         """Creates the half moves dropdown
 
         Args:
