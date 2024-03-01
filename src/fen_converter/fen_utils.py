@@ -64,11 +64,3 @@ def find_sequence_indices(arr: np.ndarray, value_to_count: int) -> Tuple[List[in
             sequence_lengths.append(length)
 
     return start_indices, sequence_lengths
-
-
-if __name__ == "__main__":
-    _arr = np.array([11, 12, 0, 12, 12, 0, 12, 0])
-
-    print(convert_row_to_fen(_arr))
-
-
