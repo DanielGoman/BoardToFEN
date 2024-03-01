@@ -1,6 +1,6 @@
-import torch
-
 from typing import List, Optional
+
+import torch
 from omegaconf import DictConfig
 
 from src.board.board import parse_board
