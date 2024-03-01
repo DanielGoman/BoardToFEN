@@ -1,4 +1,3 @@
-import cv2
 import itertools
 import numpy as np
 
@@ -6,31 +5,7 @@ from typing import List, Dict, Tuple
 from scipy.signal import convolve2d
 from matplotlib import pyplot as plt
 
-from src.board_utils.canny import canny_edge_detector
-from src.board_utils.consts import Canny
 from src.data.consts.squares_consts import BOARD_SIDE_SIZE
-
-
-def parse_board(image: np.ndarray, verbose: bool = False) -> Dict[Tuple[int, int], np.ndarray]:
-    """Parses an image that presumably contains a chess board, returning a dictionary of squares of the board
-
-    Args:
-        image: an image that contains a chess board. The image can also include background to an extent
-        verbose: prints information during runtime if True, otherwise False
-
-    Returns:
-        board_squares: "2d" dict of squares.
-                        board_squares[(square_x, square_y)] = np.ndarray of the square
-
-    """
-    edges = canny_edge_detector(image, low_thresh_ratio=Canny.low_thresh_ratio.value,
-                                high_thresh_ratio=Canny.high_thresh_ratio.value)
-
-    cropped_image, cropped_edges, cropped_row_seq, cropped_col_seq = crop_image(image, edges, verbose=verbose)
-
-    board_squares = split_board_image_to_squares(cropped_image, cropped_row_seq, cropped_col_seq)
-
-    return board_squares
 
 
 def crop_image(image: np.ndarray, edges: np.ndarray, verbose: bool) -> \
@@ -282,10 +257,3 @@ def get_max_seq_lens_per_row(frame: np.ndarray) -> np.ndarray:
     np.put(max_seq_len_per_row_no_holes, existent_rows, max_seq_len_per_row)
 
     return max_seq_len_per_row_no_holes
-
-
-if __name__ == "__main__":
-    path = "../../dataset/full_boards/31.png"
-    _image = cv2.imread(path)
-
-    parse_board(_image, verbose=True)

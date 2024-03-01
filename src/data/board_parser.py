@@ -6,7 +6,7 @@ import numpy as np
 
 from typing import List, Dict, Tuple, Any
 
-from src.board_utils.board import parse_board
+from src.board.board import parse_board
 from labeler import get_piece_labels
 from consts.path_consts import DATA_DIR, DIRS_TO_PARSE_NAMES, PIECES_OUTPUT_DIR_PATH, LABELS_OUTPUT_FILE_PATH
 from consts.squares_consts import RELEVANT_SQUARES, BOARD_SIDE_SIZE

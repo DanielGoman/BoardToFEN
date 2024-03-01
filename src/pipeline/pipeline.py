@@ -3,7 +3,7 @@ import torch
 from typing import List, Optional
 from omegaconf import DictConfig
 
-from src.board_utils.board import parse_board
+from src.board.board import parse_board
 from src.fen_converter.fen_converter import convert_pieces_to_fen
 from src.input_utils.image_capture import ImageCapture
 from src.model.dataset import PiecesDataset

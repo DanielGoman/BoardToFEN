@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 from typing import Dict, Tuple, Optional
 
-from src.board_utils.canny import canny_edge_detector
-from src.board_utils.consts import Canny
-from src.board_utils.old_board import split_board_image_to_squares, crop_image
+from src.board.canny import canny_edge_detector
+from src.board.consts import Canny
+from src.board.board_utils import split_board_image_to_squares, crop_image
 
 logger = logging.getLogger(__name__)
 
