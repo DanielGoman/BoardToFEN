@@ -1,15 +1,14 @@
 import os
 import json
+from typing import List, Dict, Tuple, Any
 
 import cv2
 import numpy as np
 
-from typing import List, Dict, Tuple, Any
-
-from src.board.board import parse_board
 from labeler import get_piece_labels
-from consts.path_consts import DATA_DIR, DIRS_TO_PARSE_NAMES, PIECES_OUTPUT_DIR_PATH, LABELS_OUTPUT_FILE_PATH
+from src.board.board import parse_board
 from consts.squares_consts import RELEVANT_SQUARES, BOARD_SIDE_SIZE
+from consts.path_consts import DATA_DIR, DIRS_TO_PARSE_NAMES, PIECES_OUTPUT_DIR_PATH, LABELS_OUTPUT_FILE_PATH
 
 
 def board_to_pieces():
