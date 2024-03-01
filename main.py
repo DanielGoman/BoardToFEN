@@ -1,5 +1,4 @@
 import hydra
-
 from omegaconf import DictConfig
 
 from src.app.app import App
