@@ -1,7 +1,7 @@
-import numpy as np
 import logging
-
 from typing import List, Union
+
+import numpy as np
 
 from src.data.consts.squares_consts import BOARD_SIDE_SIZE
 from src.fen_converter.fen_utils import convert_row_to_fen
@@ -114,19 +114,3 @@ def convert_fen_to_url(fen_parts: List[str], domain: int) -> str:
         logging.getLogger(__name__).error(f'Incorrect domain ID {domain}')
 
     return url
-
-
-if __name__ == "__main__":
-    arr = np.full((8, 8), 12)
-    arr[1:3, 4] = 0
-    arr[0, 0] = 11
-    arr[7, 7] = 5
-    arr = arr.reshape(-1)
-    _fen_parts = convert_board_pieces_to_fen(arr, active_color=False, castling_rights=[False, True, False, True],
-                                             possible_en_passant='e3', n_half_moves=3, n_full_moves=17)
-    print('Fen parts:', _fen_parts)
-
-    _domain = Domains.chess.value
-    _url = convert_fen_to_url(_fen_parts, domain=_domain)
-    print('Fen url:', _url)
-

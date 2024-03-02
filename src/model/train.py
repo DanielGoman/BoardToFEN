@@ -1,22 +1,20 @@
 import os
 import logging
-import hydra
 
+import hydra
 import torch
 import torchvision
 import numpy as np
 import torch.nn as nn
-
-from typing import List
 from omegaconf import DictConfig
-from matplotlib import pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 
-from src.model.model import PieceClassifier
 from src.model.evaluate import eval_model
+from src.model.model import PieceClassifier
 from src.model.dataset import PiecesDataset
-from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
 from src.utils.transforms import parse_config_transforms
+from src.consts import TRAIN_CONFIG_PATH, TRAIN_CONFIG_NAME
+from src.visualization.train_progress_visualization import plot_learning_curves
 
 
 @hydra.main(config_path=TRAIN_CONFIG_PATH, config_name=TRAIN_CONFIG_NAME, version_base='1.2')
@@ -70,14 +68,10 @@ def train(config: DictConfig) -> (str, torch.utils.data.DataLoader, torch.utils.
         val_loader = None
         eval_val_loader = None
     else:
-        val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
-                                                 shuffle=shuffle_data, num_workers=num_workers)
-
         eval_train_loader = get_subset_dataloader(dataset=train_dataset,
                                                   subset_ratio=config.hyperparams.train.eval_train_size)
-        # eval_val_loader = get_subset_dataloader(dataset=val_dataset,
-        #                                         subset_ratio=config.hyperparams.train.eval_val_size)
-        eval_val_loader = val_loader
+        eval_val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=batch_size,
+                                                      shuffle=shuffle_data, num_workers=num_workers)
 
     train_size = len(train_dataset) * batch_size
     train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size,
@@ -195,37 +189,6 @@ def get_subset_dataloader(dataset: torch.utils.data.Dataset, subset_ratio: float
     subset_loader = torch.utils.data.DataLoader(subset, batch_size=subset_size)
 
     return subset_loader
-
-
-def plot_learning_curves(epoch_losses: List[float], epoch_train_accuracies: List[float],
-                         epoch_val_accuracies: List[float] = None, plots_path: str = ''):
-    """Plots train loss, train accuracy and validation accuracy over epochs
-
-    Args:
-        epoch_losses: average accumulated loss per epoch
-        epoch_train_accuracies: train accuracy per epoch (type and color separately)
-        epoch_val_accuracies: validation accuracy per epoch (type and color separately)
-        plots_path: path to the directory in which the plots will be saved
-
-    """
-    num_epochs = len(epoch_losses)
-
-    plt.plot(np.arange(num_epochs), epoch_losses)
-    plt.xlabel('Epochs')
-    plt.ylabel('Loss')
-    plt.title('NLLLoss over epochs')
-    plt.savefig(os.path.join(plots_path, 'loss.png'))
-    plt.show()
-
-    plt.plot(np.arange(num_epochs), epoch_train_accuracies, label='train')
-    if epoch_val_accuracies:
-        plt.plot(np.arange(num_epochs), epoch_val_accuracies, label='val')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.title('Balanced accuracy on piece types over epochs')
-    plt.legend()
-    plt.savefig(os.path.join(plots_path, 'train_accuracy.png'))
-    plt.show()
 
 
 # tensorboard --logdir=src/model/runs

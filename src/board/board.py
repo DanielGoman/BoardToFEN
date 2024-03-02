@@ -7,9 +7,9 @@ import matplotlib.pyplot as plt
 
 from typing import Dict, Tuple, Optional
 
-from src.board_utils.canny import canny_edge_detector
-from src.board_utils.consts import Canny
-from src.board_utils.old_board import split_board_image_to_squares, crop_image
+from src.board.canny import canny_edge_detector
+from src.board.consts import Canny
+from src.board.board_utils import split_board_image_to_squares, crop_image
 
 logger = logging.getLogger(__name__)
 
@@ -127,8 +127,8 @@ def detect_board(image: np.ndarray) -> Optional[Board]:
 
 
 if __name__ == "__main__":
-    image = cv2.imread(r"C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\src\data\temp_data\lichess.png")
-    squares = parse_board(image)
+    _image = cv2.imread(r"C:\Users\GoMaN\Desktop\GoMaN\Projects\BoardToFEN\src\data\temp_data\lichess.png")
+    squares = parse_board(_image)
 
     fig, axs = plt.subplots(8, 8)
     for (i, j), square in squares.items():

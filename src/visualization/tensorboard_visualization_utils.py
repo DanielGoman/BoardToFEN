@@ -1,6 +1,5 @@
-import numpy as np
 import torch
-
+import numpy as np
 from matplotlib import pyplot as plt
 
 from src.data.consts.piece_consts import REVERSED_LABELS

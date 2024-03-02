@@ -1,9 +1,8 @@
 import cv2
 import numpy as np
-
 from typing import Tuple
 
-from src.board_utils.consts import Canny
+from src.board.consts import Canny
 
 
 def canny_edge_detector(image: np.ndarray, high_thresh_ratio: float, low_thresh_ratio: float) -> np.ndarray:

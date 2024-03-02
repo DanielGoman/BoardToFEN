@@ -54,8 +54,3 @@ class MouseController:
             elif self.click_counter == self.SECOND_CLICK:
                 self.point2 = (x, y)
                 return False
-
-
-if __name__ == "__main__":
-    controller = MouseController()
-    controller.select_capture_region()

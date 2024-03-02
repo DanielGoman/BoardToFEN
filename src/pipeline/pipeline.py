@@ -1,9 +1,9 @@
-import torch
-
 from typing import List, Optional
+
+import torch
 from omegaconf import DictConfig
 
-from src.board_utils.board import parse_board
+from src.board.board import parse_board
 from src.fen_converter.fen_converter import convert_pieces_to_fen
 from src.input_utils.image_capture import ImageCapture
 from src.model.dataset import PiecesDataset
@@ -25,7 +25,8 @@ class Pipeline:
 
         """
         self.model = PieceClassifier(**model_params)
-        self.model.load_state_dict(torch.load(model_path))
+        device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.model.load_state_dict(torch.load(model_path, map_location=torch.device(device)))
         self.transforms = parse_config_transforms(transforms)
 
     def run_pipeline(self) -> Optional[List[str]]:

@@ -1,12 +1,13 @@
 import tkinter as tk
-
-from tkinter import ttk, messagebox
+import webbrowser
+from tkinter import ttk
 from typing import List, Dict, Tuple
 
-from src.fen_converter.fen_converter import convert_board_pieces_to_fen, convert_fen_to_url
-from src.gui.app_utils import gui_to_fen_parameters
-from src.gui.consts import ActiveColor
+import pyperclip
+
 from src.pipeline.pipeline import Pipeline
+from src.fen_converter.consts import Domains
+from src.app.app_utils import gui_to_fen_parameters, show_disappearing_message_box
 
 
 class App:
@@ -47,7 +48,7 @@ class App:
         self.file_var, self.row_var = self.make_enpassant_dropdowns(self.square_options)
 
         # Create half-moves dropdown
-        self.halfmove_options = list(range(50))
+        self.halfmove_options = [str(i) for i in range(50)]
         self.n_halfmoves_var = self.make_halfmoves_dropdown(self.halfmove_options)
 
         # Create full-move entry
@@ -64,7 +65,7 @@ class App:
         """Creates the button which accepts from the user the current active color, as well as the screenshot button
 
         Args:
-            active_color_image_paths: paths to images of each color
+            active_color_image_paths: paths to assets of each color
             screenshot_image_path: path to the image of the screenshot button
 
         """
@@ -72,7 +73,7 @@ class App:
         canvas = tk.Canvas(self.app, width=300, height=50)
         canvas.pack(pady=(20, 5))
 
-        # Load images
+        # Load assets
         self.photo_images = [tk.PhotoImage(file=image_path) for image_path in active_color_image_paths.values()]
         self.photo_images = [image.subsample(2) for image in self.photo_images]
 
@@ -190,7 +191,7 @@ class App:
 
         return file_var, row_var
 
-    def make_halfmoves_dropdown(self, halfmove_options: List[int]):
+    def make_halfmoves_dropdown(self, halfmove_options: List[str]):
         """Creates the half moves dropdown
 
         Args:
@@ -277,7 +278,7 @@ class App:
         """Creates the domain buttons
 
         Args:
-            image_paths: paths to images of each domain
+            image_paths: paths to assets of each domain
 
         """
         domain_keys = list(image_paths.keys())
@@ -294,32 +295,18 @@ class App:
             button.image = image
             button.pack(side=tk.LEFT, padx=(30, 30), pady=5)
 
-        # Create three buttons with images
+        # Create three buttons with assets
         create_image_button(image_1, domain_keys[0])
         create_image_button(image_2, domain_keys[1])
         create_image_button(image_3, domain_keys[2])
 
-    def show_response_message(self):
+    def show_status_message(self):
         """Show a success/failure message box based on whether the detection of the board succeeded or not
         """
-        message_box = tk.Toplevel(self.app)
-        width = self.app.winfo_width()
-        height = 20
-        x = self.app.winfo_x() + self.app.winfo_width() // 2 - width // 2
-        y = self.app.winfo_y() + 35
-        message_box.geometry(f"{width}x{height}+{x}+{y}")
-        message_box.overrideredirect(True)
-        message_box.attributes('-topmost', True)
-
         if self.board_rows_as_fen is None:
-            status_label = tk.Label(message_box, text="Failed to detect board", fg='red', bg='black', bd=4,
-                                    font=('Arial', 12, 'bold'))
+            show_disappearing_message_box(app=self.app, message="Failed to detect board")
         else:
-            status_label = tk.Label(message_box, text="Successfully analyzed board", fg='red', bg='black', bd=4,
-                                    font=('Arial', 12, 'bold'))
-
-        status_label.pack()
-        self.app.after(3000, message_box.destroy)
+            show_disappearing_message_box(app=self.app, message="Successfully analyzed board")
 
     def on_screenshot_click(self):
         """Lets the user take a screenshot, and converts the board in the screenshot to FEN format
@@ -327,7 +314,7 @@ class App:
         """
         self.app.iconify()
         self.board_rows_as_fen = self.pipeline.run_pipeline()
-        self.show_response_message()
+        self.show_status_message()
         self.app.deiconify()
 
     def on_domain_click(self, domain_number: int):
@@ -345,5 +332,8 @@ class App:
                                         n_halfmoves_var=self.n_halfmoves_var, n_fullmoves_var=self.n_fullmoves_var,
                                         domain_number=domain_number)
 
-        print(fen_url)
-        # ?
+        if domain_number == Domains.chess.value or domain_number == Domains.lichess.value:
+            webbrowser.open(fen_url)
+        elif domain_number == Domains.pure_fen.value:
+            pyperclip.copy(fen_url)
+            show_disappearing_message_box(app=self.app, message='Copied FEN to clipboard!')
